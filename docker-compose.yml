@@ -1,0 +1,20 @@
+services:
+  content-maestro:
+    container_name: content-maestro
+    restart: always
+    image: content-maestro:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION}
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Kiev
+    networks:
+      - think-root-network
+
+networks:
+  think-root-network:
+    external: true
