@@ -1,0 +1,35 @@
+apis:
+  whatsapp:
+    url: "{env.WAPP_SERVER_URL}/wapp/send-message"
+    method: "POST"
+    auth_type: "bearer"
+    token_env_var: "WAPP_TOKEN"
+    content_type: "json"
+    timeout: 30
+    success_code: 200
+    enabled: false
+    response_type: "json"
+
+  twitter:
+    url: "{env.X_URL}/x/api/posts/create"
+    method: "POST"
+    auth_type: "api_key"
+    token_env_var: "X_API_KEY"
+    token_header: "X-API-Key"
+    content_type: "multipart"
+    timeout: 30
+    success_code: 200
+    enabled: true
+    response_type: "json"
+
+  telegram:
+    url: "{env.TELEGRAM_SERVER_URL}/telegram/send-message"
+    method: "POST"
+    auth_type: "api_key"
+    token_env_var: "TELEGRAM_API_KEY"
+    token_header: "X-API-Key"
+    content_type: "multipart"
+    timeout: 30
+    success_code: 200
+    enabled: true
+    response_type: "json"
