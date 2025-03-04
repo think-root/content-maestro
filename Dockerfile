@@ -4,7 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build content-maestro ./cmd/main.go
+RUN go build -o content-maestro ./cmd/main.go
 
 # Runtime
 FROM alpine:3.16
