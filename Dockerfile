@@ -4,13 +4,13 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-
-ARG APP_VERSION=dev
-RUN go build -ldflags="-X 'content-maestro/config.APP_VERSION=${APP_VERSION}'" -o content-maestro ./cmd/main.go
+RUN go build content-maestro ./cmd/main.go
 
 # Runtime
 FROM alpine:3.16
 WORKDIR /app
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
 COPY --from=builder /app/content-maestro .
 COPY .env /app/.env
 COPY assets/ /app/assets/

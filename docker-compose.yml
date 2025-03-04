@@ -11,7 +11,8 @@ services:
     env_file:
       - .env
     environment:
-      TZ: Europe/Kiev
+      - TZ=Europe/Kiev
+      - APP_VERSION=${APP_VERSION}
     networks:
       - think-root-network
 
