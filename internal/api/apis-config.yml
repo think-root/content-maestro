@@ -11,10 +11,10 @@ apis:
     response_type: "json"
 
   twitter:
-    url: "{env.X_URL}/x/api/posts/create"
+    url: "{env.TWITTER_URL}/x/api/posts/create"
     method: "POST"
     auth_type: "api_key"
-    token_env_var: "X_API_KEY"
+    token_env_var: "TWITTER_API_KEY"
     token_header: "X-API-Key"
     content_type: "multipart"
     timeout: 30
@@ -26,7 +26,7 @@ apis:
     url: "{env.TELEGRAM_SERVER_URL}/telegram/send-message"
     method: "POST"
     auth_type: "api_key"
-    token_env_var: "TELEGRAM_API_KEY"
+    token_env_var: "TELEGRAM_SERVER_TOKEN"
     token_header: "X-API-Key"
     content_type: "multipart"
     timeout: 30
