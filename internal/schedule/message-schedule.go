@@ -44,22 +44,45 @@ func MessageCron() *gocron.Scheduler {
 			log.Fatalf("Failed to load API configurations: %v", err)
 		}
 
-		xPostReq := api.RequestConfig{
-			APIName: "twitter",
-			FormFields: map[string]string{
+		for apiName, endpoint := range api.GetAPIConfigs().APIs { 
+			if !endpoint.Enabled {
+				continue
+			}
+
+			var req api.RequestConfig
+
+			commonFields := map[string]string{
 				"text": item.Text,
 				"url":  item.URL,
-			},
-			FileFields: map[string]string{
-				"image": image_name,
-			},
-		}
+			}
 
-		xResp, err := api.ExecuteRequest(xPostReq)
-		if err != nil {
-			log.Debug("X API error: %v", err)
-		} else if xResp.Success {
-			log.Debug("X post created successfully!")
+			switch strings.ToLower(endpoint.ContentType) {
+			case "multipart":
+				req = api.RequestConfig{
+					APIName:    apiName,
+					FormFields: commonFields,
+					FileFields: map[string]string{
+						"image": image_name,
+					},
+				}
+			case "json":
+				req = api.RequestConfig{
+					APIName:  apiName,
+					JSONBody: map[string]interface{}{"text": item.Text, "url": item.URL},
+				}
+			default:
+				req = api.RequestConfig{
+					APIName:  apiName,
+					JSONBody: map[string]interface{}{"text": item.Text, "url": item.URL},
+				}
+			}
+
+			resp, err := api.ExecuteRequest(req)
+			if err != nil {
+				log.Debug("%s API error: %v", apiName, err)
+			} else if resp.Success {
+				log.Debug("%s post created successfully!", apiName)
+			}
 		}
 
 		if _, err := repository.UpdateRepositoryPosted(item.URL, true); err != nil {
