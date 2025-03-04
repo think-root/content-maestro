@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -17,6 +16,6 @@ func RemoveAllFilesInFolder(dir string) error {
 			return err
 		}
 	}
-	log.Println("Files removed successfully!")
+	log.Debug("Files removed successfully!")
 	return nil
 }

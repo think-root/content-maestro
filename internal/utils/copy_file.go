@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"content-maestro/internal/logger"
 	"io"
 	"os"
 )
+
+var log = logger.NewLogger()
 
 func CopyFile(sourceFile, targetFile string) error {
 	srcFile, err := os.Open(sourceFile)
