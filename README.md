@@ -1,18 +1,28 @@
-# content-maestro
-
-![baner](baner.png)
-
-[![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
-[![License](https://img.shields.io/github/license/think-root/content-maestro)](LICENSE)
-[![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
-[![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
-[![Deploy Status](https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/think-root/content-maestro)](https://goreportcard.com/report/github.com/think-root/content-maestro)
+<h1 align="center">Content Maestro</h1>
+<div align="center">
+  <a href="https://github.com/think-root/content-maestro">
+    <img src="https://img.shields.io/github/go-mod/go-version/think-root/content-maestro" alt="Go Version">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/think-root/content-maestro" alt="License">
+  </a>
+  <a href="https://github.com/think-root/content-maestro/releases">
+    <img src="https://img.shields.io/github/v/release/think-root/content-maestro" alt="Version">
+  </a>
+  <a href="CHANGELOG.md">
+    <img src="https://img.shields.io/badge/changelog-view-blue" alt="Changelog">
+  </a>
+  <a href="https://github.com/think-root/content-maestro/actions/workflows/deploy.yml">
+    <img src="https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg" alt="Deploy Status">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/think-root/content-maestro">
+    <img src="https://goreportcard.com/badge/github.com/think-root/content-maestro" alt="Go Report Card">
+  </a>
+    <img src="baner.png" alt="baner">
+</div>
 
 ## Table of Contents
 
-- [content-maestro](#content-maestro)
-  - [Table of Contents](#table-of-contents)
   - [Description](#description)
     - [Technology Stack](#technology-stack)
   - [How to run](#how-to-run)
