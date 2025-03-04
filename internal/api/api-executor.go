@@ -57,6 +57,10 @@ type APIResponse struct {
 
 var apiConfig *APIConfig
 
+func GetAPIConfigs() *APIConfig {
+	return apiConfig
+}
+
 func LoadAPIConfigs(configPath string) error {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
