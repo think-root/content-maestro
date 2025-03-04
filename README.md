@@ -1,5 +1,7 @@
 # content-maestro
 
+![baner](baner.png)
+
 [![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
 [![License](https://img.shields.io/github/license/think-root/content-maestro)](LICENSE)
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
