@@ -25,7 +25,7 @@
 
 ## Description
 
-So, _content-maestro_ is a part of [content-alchemist](https://github.com/think-root/content-alchemist), essentially an app that schedules requests to various integrations, which then publish content. Got it! Do you need help with setup, debugging, or extending its functionality?
+This app is a part of [content-alchemist](https://github.com/think-root/content-alchemist), essentially an app that schedules requests to various integrations, which then publish content.
 
 ### Technology Stack
 
