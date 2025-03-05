@@ -22,18 +22,18 @@ func Socialify(usernameRepo string) error {
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		err := trySocialify(usernameRepo)
 		if err == nil {
-			log.Error("Socialify image parsing finished")
+			log.Debug("Socialify image parsing finished")
 			return nil
 		}
 
 		lastErr = err
 		if attempt < maxRetries {
-			log.Errorln("Attempt %d failed: %v. Retrying in %s...", attempt, err, retryInterval)
+			log.Errorf("Attempt %d failed: %v. Retrying in %s...", attempt, err, retryInterval)
 			time.Sleep(retryInterval)
 		}
 	}
 
-	log.Debug("All %d attempts failed. Last error: %v", maxRetries, lastErr)
+	log.Debugf("All %d attempts failed. Last error: %v", maxRetries, lastErr)
 	return lastErr
 }
 
@@ -51,6 +51,12 @@ func trySocialify(usernameRepo string) error {
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != 200 {
+		err := fmt.Errorf("received non-OK status code: %v", response.StatusCode)
+		log.Error(err)
+		return err
+	}
+
 	file, err := os.Create("./tmp/gh_project_img/image.png")
 	if err != nil {
 		log.Error(err)
@@ -62,10 +68,6 @@ func trySocialify(usernameRepo string) error {
 	if err != nil {
 		log.Error(err)
 		return err
-	}
-
-	if response.StatusCode != 200 {
-		return fmt.Errorf("error code: %v", response.StatusCode)
 	}
 
 	return nil
