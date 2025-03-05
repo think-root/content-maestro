@@ -16,7 +16,7 @@ var log = logger.NewLogger()
 
 func MessageCron() *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron("25 11 * * *").Do(func() {
+	s.Cron("12 10 * * *").Do(func() {
 		log.Debug("cron job started")
 
 		repo, err := repository.GetRepository(1, false)
@@ -41,7 +41,7 @@ func MessageCron() *gocron.Scheduler {
 
 		err = api.LoadAPIConfigs("./internal/api/apis-config.yml")
 		if err != nil {
-			log.Fatalf("Failed to load API configurations: %v", err)
+			log.Error("Failed to load API configurations: %v", err)
 		}
 
 		for apiName, endpoint := range api.GetAPIConfigs().APIs { 
@@ -79,9 +79,9 @@ func MessageCron() *gocron.Scheduler {
 
 			resp, err := api.ExecuteRequest(req)
 			if err != nil {
-				log.Debug("%s API error: %v", apiName, err)
+				log.Errorf("%s API error: %v", apiName, err)
 			} else if resp.Success {
-				log.Debug("%s post created successfully!", apiName)
+				log.Debugf("%s post created successfully!", apiName)
 			}
 		}
 
