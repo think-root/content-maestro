@@ -16,7 +16,7 @@ var log = logger.NewLogger()
 
 func MessageCron() *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron("20 11 * * *").Do(func() {
+	s.Cron("25 11 * * *").Do(func() {
 		log.Debug("cron job started")
 
 		repo, err := repository.GetRepository(1, false)
