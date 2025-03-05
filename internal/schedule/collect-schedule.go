@@ -29,7 +29,7 @@ func CollectCron() *gocron.Scheduler {
 		log.Debug("Collecting posts...")
 
 		payload := generateRequest{
-			MaxRepos:           1,
+			MaxRepos:           5,
 			Since:              "daily",
 			SpokenLanguageCode: "en",
 		}
@@ -72,7 +72,7 @@ func CollectCron() *gocron.Scheduler {
 		}
 
 		if response.Status == "ok" {
-			log.Debug("Successfully collected %d new repositories", len(response.Added))
+			log.Debugf("Successfully collected %d new repositories", len(response.Added))
 		}
 	})
 
