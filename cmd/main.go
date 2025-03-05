@@ -17,7 +17,7 @@ var log = logger.NewLogger()
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Error("Error loading .env file")
 	}
 	log.Debug("environment loaded successfully")
 	if os.Getenv("APP_VERSION") == "" {
