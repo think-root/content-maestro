@@ -1,5 +1,7 @@
 <h1 align="center">Content Maestro</h1>
 
+<div align="center">
+
 [![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
 [![License](https://img.shields.io/github/license/think-root/content-maestro)](LICENSE)
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
@@ -7,8 +9,8 @@
 [![Deploy Status](https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/think-root/content-maestro)](https://goreportcard.com/report/github.com/think-root/content-maestro)
 
-<div align="center">
-    <img src="baner.png" alt="baner">
+<img src="baner.png" alt="baner">
+
 </div>
 
 ## Description
