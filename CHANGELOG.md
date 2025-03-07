@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/think-root/content-maestro/compare/v1.0.0...v1.0.1) (2025-03-07)
+
+
+### Bug Fixes
+
+* correct URL formatting in CollectCron request ([7cdd451](https://github.com/think-root/content-maestro/commit/7cdd451e51d684e3113b7eff4da4771e21473dbc))
+
 # 1.0.0 (2025-03-04)
 
 
