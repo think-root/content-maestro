@@ -25,7 +25,7 @@ type generateResponse struct {
 
 func CollectCron() *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron("0 13 * * 5").Do(func() {
+	s.Cron("0 13 * * 6").Do(func() {
 		log.Debug("Collecting posts...")
 
 		payload := generateRequest{
