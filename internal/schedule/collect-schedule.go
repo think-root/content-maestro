@@ -40,7 +40,7 @@ func CollectCron() *gocron.Scheduler {
 			return
 		}
 
-		req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
+		req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
 		if err != nil {
 			log.Error("Error creating request: %v", err)
 			return
