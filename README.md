@@ -80,3 +80,9 @@ docker compose up -d
 ```bash
 go build -o content-maestro ./cmd/main.go
 ```
+
+### Testing
+
+```bash
+go test -v -cover ./...
+```
