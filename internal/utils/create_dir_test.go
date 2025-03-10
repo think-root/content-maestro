@@ -42,3 +42,24 @@ func TestCreateDirIfNotExist(t *testing.T) {
 		}
 	})
 }
+
+func TestCreateDirIfNotExist_Success(t *testing.T) {
+	temp := t.TempDir()
+	newDir := filepath.Join(temp, "testDir")
+	CreateDirIfNotExist(newDir)
+	info, err := os.Stat(newDir)
+	if err != nil {
+		t.Errorf("Directory was not created: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("Not a directory")
+	}
+	CreateDirIfNotExist(newDir)
+}
+
+func TestCreateDirIfNotExist_Error(t *testing.T) {
+	temp := t.TempDir()
+	errPath := filepath.Join(temp, "noPermission", "sub")
+	os.Mkdir(temp+"/noPermission", 0o400)
+	CreateDirIfNotExist(errPath)
+}
