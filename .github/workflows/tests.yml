@@ -34,44 +34,29 @@ jobs:
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
 
-      - name: Build
-        run: go build -v ./cmd/main.go
-
-      - name: Generate coverage report
+      - name: Convert coverage to badge
         run: |
-          go tool cover -func=coverage.out > coverage.txt
-          total=$(cat coverage.txt | grep total | grep -Eo '[0-9]+\.[0-9]+')
-          echo "COVERAGE=$(echo ${total})" >> $GITHUB_ENV
-          
-      - name: Create the Badge
-        uses: schneegans/dynamic-badges-action@v1.6.0
-        with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: 1893cbb3bcfe5f0a5edc279f929f8deb
-          filename: go-coverage.json
-          label: Coverage
-          message: ${{ env.COVERAGE }}%
-          valColorRange: ${{ env.COVERAGE }}
-          maxColorRange: 100
-          minColorRange: 0
+          total_coverage=$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+')
+          rounded_coverage=$(printf "%.0f" $total_coverage)
+          if [ $rounded_coverage -lt 50 ]; then
+            color="red"
+          elif [ $rounded_coverage -lt 80 ]; then
+            color="yellow"
+          else
+            color="brightgreen"
+          fi
+          echo "COVERAGE=$rounded_coverage" >> $GITHUB_ENV
+          echo "COLOR=$color" >> $GITHUB_ENV
 
-      - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v17
-        id: verify-changed-files
-        with:
-          files: README.md
+      - name: Update README badge
+        run: |
+          sed -i "s|https://img.shields.io/badge/Coverage-.*-.*\.svg|https://img.shields.io/badge/Coverage-${{ env.COVERAGE }}%25-${{ env.COLOR }}.svg|" README.md
 
       - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add README.md
-          git commit -m "docs: Updated coverage badge."
-
-      - name: Push changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+          git commit -m "docs: Updated coverage badge." || echo "No changes to commit"
+          git push || echo "No changes to push"
