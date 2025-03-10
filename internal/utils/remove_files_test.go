@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -73,5 +75,52 @@ func TestRemoveAllFilesInFolder(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRemoveAllFilesInFolder_NonExistent(t *testing.T) {
+	err := RemoveAllFilesInFolder("nonexistent_folder")
+	if err == nil || !strings.Contains(err.Error(), "does not exist") {
+		t.Errorf("expected error about nonexistent folder, got %v", err)
+	}
+}
+
+func TestRemoveAllFilesInFolder_Success(t *testing.T) {
+	testDir := t.TempDir()
+	f, err := os.CreateTemp(testDir, "testfile")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	f.Close()
+
+	err = RemoveAllFilesInFolder(testDir)
+	if err != nil {
+		t.Errorf("unexpected error removing files: %v", err)
+	}
+	files, err := filepath.Glob(filepath.Join(testDir, "*"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(files) != 0 {
+		t.Errorf("files were not removed properly")
+	}
+}
+
+func TestRemoveAllFilesInFolder_FailedRemove(t *testing.T) {
+	testDir := t.TempDir()
+	fp := filepath.Join(testDir, "locked")
+	if err := os.WriteFile(fp, []byte("content"), 0400); err != nil {
+		t.Fatalf("failed to write locked file: %v", err)
+	}
+	remove = func(name string) error {
+		if name == fp {
+			return errors.New("mock remove error")
+		}
+		return os.Remove(name)
+	}
+	defer func() { remove = os.Remove }()
+	err := RemoveAllFilesInFolder(testDir)
+	if err == nil || !strings.Contains(err.Error(), "mock remove error") {
+		t.Errorf("expected mock remove error, got %v", err)
 	}
 }
