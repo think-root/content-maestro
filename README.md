@@ -8,7 +8,7 @@
 [![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
 [![Deploy Status](https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/think-root/content-maestro)](https://goreportcard.com/report/github.com/think-root/content-maestro)
-[![Go Coverage](https://github.com/think-root/content-maestro/wiki/coverage.svg)](https://raw.githack.com/wiki/think-root/content-maestro/coverage.html)
+![Coverage](https://img.shields.io/badge/Coverage-0%25-red.svg)
 
 <img src="baner.png" alt="baner">
 
