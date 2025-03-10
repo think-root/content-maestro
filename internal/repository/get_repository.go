@@ -3,9 +3,7 @@ package repository
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -28,39 +26,32 @@ type repositoryResponse struct {
 }
 
 func GetRepository(limit int, posted bool) (*repositoryResponse, error) {
-
-	url := os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/get-repository/"
-
 	payload := strings.NewReader(fmt.Sprintf(`{
-		"limit": %d,
-		"posted": %t
-	}`, limit, posted))
+        "limit": %d,
+        "posted": %t
+    }`, limit, posted))
 
-	req, err := http.NewRequest("POST", url, payload)
+	req, err := http.NewRequest(http.MethodPost, getRepositoryUrl, payload)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
+		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	req.Header.Add("Accept", "*/*")
-	req.Header.Add("Connection", "keep-alive")
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+os.Getenv("CONTENT_ALCHEMIST_BEARER"))
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %v", err)
+	req.Header = http.Header{
+		"Accept":        {"*/*"},
+		"Connection":    {"keep-alive"},
+		"Content-Type":  {"application/json"},
+		"Authorization": {bearerToken},
 	}
-	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %v", err)
+		return nil, fmt.Errorf("error sending request: %w", err)
 	}
+	defer resp.Body.Close()
 
 	var response repositoryResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("error unmarshaling response: %v", err)
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
 	return &response, nil
