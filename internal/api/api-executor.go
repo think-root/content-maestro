@@ -233,23 +233,24 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 
 func extractEnvVarsFromString(input string) []string {
 	var envVars []string
-	startIdx := 0
+	start := 0
 
-	for {
-		startIdx = strings.Index(input[startIdx:], "{env.")
-		if startIdx == -1 {
+	for start < len(input) {
+		envStart := strings.Index(input[start:], "{env.")
+		if envStart == -1 {
 			break
 		}
+		envStart += start + len("{env.")
 
-		startIdx += len("{env.")
-		endIdx := strings.Index(input[startIdx:], "}")
-		if endIdx == -1 {
+		envEnd := strings.Index(input[envStart:], "}")
+		if envEnd == -1 {
 			break
 		}
+		envEnd += envStart
 
-		envVar := input[startIdx : startIdx+endIdx]
+		envVar := input[envStart:envEnd]
 		envVars = append(envVars, envVar)
-		startIdx += endIdx + 1
+		start = envEnd + 1
 	}
 
 	return envVars
