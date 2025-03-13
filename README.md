@@ -56,7 +56,7 @@ create a **.env** file in the app root directory
 
 ## Apis config
 
-The `apis-config.yml` file contains configuration settings for various messaging APIs used by the content-maestro service.
+The [apis-config.yml](internal/api/apis-config.yml) file contains configuration settings for various messaging APIs used by the content-maestro service.
 
 ### Structure
 
