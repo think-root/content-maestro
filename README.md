@@ -53,6 +53,57 @@ create a **.env** file in the app root directory
 
 ⚠️ Warning: WhatsApp integration is unofficial and may risk account suspension
 
+
+## Apis config
+
+The `apis-config.yml` file contains configuration settings for various messaging APIs used by the content-maestro service.
+
+### Structure
+
+Each API configuration contains the following fields:
+
+- `url`: The endpoint URL with environment variable support
+- `method`: HTTP method for the request
+- `auth_type`: Authentication type ("bearer" or "api_key")
+- `token_env_var`: Environment variable name containing the auth token
+- `token_header`: Header name for API key (if auth_type is "api_key")
+- `content_type`: Request content type ("json" or "multipart")
+- `timeout`: Request timeout in seconds
+- `success_code`: Expected HTTP success response code
+- `enabled`: Boolean flag to enable/disable the API
+- `response_type`: Expected response format
+
+### Supported APIs
+
+Currently configured APIs:
+
+**WhatsApp**
+
+- Uses bearer token authentication
+- JSON content type
+- Currently disabled by default
+
+**Twitter**
+
+- Uses API key authentication via X-API-Key header
+- Multipart content type
+- Enabled by default
+
+**Telegram**
+
+- Uses API key authentication via X-API-Key header
+- Multipart content type
+- Enabled by default
+
+### Environment Variables Required
+
+- `WAPP_SERVER_URL`
+- `WAPP_TOKEN`
+- `TWITTER_URL`
+- `TWITTER_API_KEY`
+- `TELEGRAM_SERVER_URL`
+- `TELEGRAM_SERVER_TOKEN`
+
 ### Deploy
 
 ```bash
@@ -71,9 +122,9 @@ docker compose up -d
 
 1. Set up your .env file
 2. Run the app:
-   ```bash
-   go run ./cmd/main.go
-   ```
+  ```bash
+  go run ./cmd/main.go
+  ```
 
 ### Building
 
@@ -86,3 +137,21 @@ go build -o content-maestro ./cmd/main.go
 ```bash
 go test -v -cover ./...
 ```
+
+### Pull Requests
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests to ensure everything works
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Guidelines
+
+- Follow Go coding standards and conventions
+- Include tests for new features
+- Update documentation as needed
+- Keep commits atomic and well-described
+- Reference issues in commit messages and PRs
