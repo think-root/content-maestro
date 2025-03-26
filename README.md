@@ -50,6 +50,8 @@ create a **.env** file in the app root directory
 | WAPP_SERVER_URL          | The URL of the WhatsApp integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_URL      | The URL of the Telegram integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_TOKEN    | Your API key for integration with [Telegram](https://github.com/think-root/telegram-connector)            |
+| API_TOKEN               | Authentication token for Cron Management API                                                               |
+| API_PORT               | Port for the Cron Management API server (default: 8080)                                                    |
 
 ⚠️ Warning: WhatsApp integration is unofficial and may risk account suspension
 
@@ -105,9 +107,131 @@ Currently configured APIs:
 
 ### Deploy
 
+The application can be deployed in two ways:
+
+#### 1. Direct Docker Deployment
+
 ```bash
 docker compose up -d
 ```
+
+This will create a Docker volume named `content-maestro-data` that persists the BadgerDB data. The data will survive container restarts and removals.
+
+#### 2. Local Development to Docker Migration
+
+If you've been running the application locally and want to move to Docker while preserving your data:
+
+1. Stop the local application
+2. Create a Docker volume:
+```bash
+docker volume create content-maestro-data
+```
+
+3. Copy your local BadgerDB data to the Docker volume:
+```bash
+# Assuming your local data is in ./data/badger
+docker run --rm -v $(pwd)/data/badger:/source -v content-maestro-data:/dest alpine cp -r /source/. /dest/
+```
+
+4. Deploy with Docker Compose:
+```bash
+docker compose up -d
+```
+
+Your existing cron settings will be preserved in the Docker deployment.
+
+## Cron Management API
+
+The application now includes a REST API for managing cron jobs. This API allows you to view, update schedules, and control the status of cron jobs.
+
+### Authentication
+
+All API endpoints are protected with Bearer token authentication. You need to provide the `API_TOKEN` in the request header:
+
+```bash
+Authorization: Bearer your_api_token
+```
+
+### Available Endpoints
+
+#### Get All Cron Settings
+```http
+GET /api/crons
+```
+Returns the current settings for all cron jobs.
+
+Response example:
+```json
+[
+  {
+    "name": "collect",
+    "schedule": "0 13 * * 6",
+    "is_active": true,
+    "updated_at": "2024-03-15T10:00:00Z"
+  },
+  {
+    "name": "message",
+    "schedule": "12 10 * * *",
+    "is_active": true,
+    "updated_at": "2024-03-15T10:00:00Z"
+  }
+]
+```
+
+#### Update Cron Schedule
+```http
+PUT /api/crons/{name}/schedule
+```
+Update the schedule for a specific cron job. The `name` can be either `collect` or `message`.
+
+Request body:
+```json
+{
+  "schedule": "0 15 * * 6"
+}
+```
+
+#### Update Cron Status
+```http
+PUT /api/crons/{name}/status
+```
+Enable or disable a specific cron job. The `name` can be either `collect` or `message`.
+
+Request body:
+```json
+{
+  "is_active": false
+}
+```
+
+### Example Usage
+
+1. Get all cron settings:
+```bash
+curl -H "Authorization: Bearer your_api_token" http://localhost:8080/api/crons
+```
+
+2. Update collect schedule:
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer your_api_token" \
+  -H "Content-Type: application/json" \
+  -d '{"schedule": "0 15 * * 6"}' \
+  http://localhost:8080/api/crons/collect/schedule
+```
+
+3. Disable message cron:
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer your_api_token" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active": false}' \
+  http://localhost:8080/api/crons/message/status
+```
+
+### Data Persistence
+
+The cron settings are stored in BadgerDB, a performant key-value store. The data is persisted in the `data/badger` directory. When running in Docker, make sure to configure a volume for this directory to maintain settings across container restarts.
 
 ## Contribution
 
