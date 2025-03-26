@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/think-root/content-maestro/compare/v1.1.0...v1.2.0) (2025-03-26)
+
+
+### Features
+
+* add AuthMiddleware for API token validation in HTTP requests ([40a95e7](https://github.com/think-root/content-maestro/commit/40a95e7d7b035e5396c1f84aa00c9f1041dc37c2))
+* add CronAPI for managing cron jobs with endpoints for retrieving, updating schedules, and statuses ([4aa06fe](https://github.com/think-root/content-maestro/commit/4aa06fef4aca483984a4eb2a305ecdcf7fbbe08e))
+* add CronSetting and request types for cron job management ([37493f4](https://github.com/think-root/content-maestro/commit/37493f42a62a455c396c8d43aac6caf119868598))
+* enhance CollectCron function to utilize store for dynamic scheduling ([a1e6448](https://github.com/think-root/content-maestro/commit/a1e6448400576e4597926c0f099a24341452c8e8))
+* implement API for managing cron jobs ([0336a02](https://github.com/think-root/content-maestro/commit/0336a0245b0e2fca9cef67c84d0438ef9f196cea))
+* implement Badger store for managing cron settings with CRUD operations ([69f38aa](https://github.com/think-root/content-maestro/commit/69f38aa3efadd16fb43a1641fdf19ab7bca1ab3e))
+* modify MessageCron function to integrate store for dynamic cron scheduling ([914d374](https://github.com/think-root/content-maestro/commit/914d3740c617198be0f9f5183a4e76deccccdf31))
+
 # [1.1.0](https://github.com/think-root/content-maestro/compare/v1.0.1...v1.1.0) (2025-03-26)
 
 
