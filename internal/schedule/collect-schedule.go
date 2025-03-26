@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"bytes"
+	"content-maestro/internal/store"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -23,9 +24,21 @@ type generateResponse struct {
 	DontAdded []string `json:"dont_added"`
 }
 
-func CollectCron() *gocron.Scheduler {
+func CollectCron(store *store.Store) *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron("0 13 * * 6").Do(func() {
+
+	setting, err := store.GetCronSetting("collect")
+	if err != nil {
+		log.Error("Error getting cron setting: %v", err)
+		return s
+	}
+
+	if setting == nil || !setting.IsActive {
+		log.Debug("Collect cron is disabled")
+		return s
+	}
+
+	s.Cron(setting.Schedule).Do(func() {
 		log.Debug("Collecting posts...")
 
 		payload := generateRequest{
