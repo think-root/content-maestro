@@ -2,6 +2,7 @@
 
 <div align="center">
 
+![License](https://img.shields.io/github/license/think-root/content-maestro?style=flat-square)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
 [![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
