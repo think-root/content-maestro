@@ -48,11 +48,15 @@ func main() {
 		"message": messageScheduler,
 	})
 
-	http.Handle("/api/crons", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCrons)))
-	http.Handle("/api/crons/collect/schedule", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule)))
-	http.Handle("/api/crons/message/schedule", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule)))
-	http.Handle("/api/crons/collect/status", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))
-	http.Handle("/api/crons/message/status", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))
+	baseRouter := http.NewServeMux()
+
+	baseRouter.Handle("/api/crons", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCrons))))
+	baseRouter.Handle("/api/crons/collect/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
+	baseRouter.Handle("/api/crons/message/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
+	baseRouter.Handle("/api/crons/collect/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
+	baseRouter.Handle("/api/crons/message/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
+
+	http.Handle("/content-maestro/", http.StripPrefix("/content-maestro", baseRouter))
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
