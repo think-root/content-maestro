@@ -25,11 +25,13 @@ type repositoryResponse struct {
 	Status  string `json:"status"`
 }
 
-func GetRepository(limit int, posted bool) (*repositoryResponse, error) {
+func GetRepository(limit int, posted bool, sort_order, sort_by string) (*repositoryResponse, error) {
 	payload := strings.NewReader(fmt.Sprintf(`{
-        "limit": %d,
-        "posted": %t
-    }`, limit, posted))
+    		"limit": %d,
+        "posted": %t,
+				"sort_order": %s,
+    		"sort_by": %s
+    }`, limit, posted, sort_order, sort_by))
 
 	req, err := http.NewRequest(http.MethodPost, getRepositoryUrl, payload)
 	if err != nil {
