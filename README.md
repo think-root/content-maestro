@@ -3,7 +3,6 @@
 <div align="center">
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
-[![License](https://img.shields.io/github/license/think-root/content-maestro)](LICENSE)
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
 [![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
 [![Deploy Status](https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
@@ -16,7 +15,7 @@
 
 ## Description
 
-This app is a part of [content-alchemist](https://github.com/think-root/content-alchemist), essentially an app that schedules requests to various integrations, which then publish content.
+Helper app for [content-alchemist](https://github.com/think-root/content-alchemist) that manages content like a skilled maestro. Essentially, it makes scheduled requests to various integrations (such as [telegram-connector](https://github.com/think-root/telegram-connector) or [x-connector](https://github.com/think-root/x-connector)) using a convenient [config](internal/api/apis-config.yml). It also prepares posts for publication by generating images with information about the repository using [socialify](https://github.com/wei/socialify) and makes scheduled requests to the API method of [content-alchemist](https://github.com/think-root/content-alchemist), which [automatically generates](https://github.com/think-root/content-alchemist?tab=readme-ov-file#apiauto-generate) new posts.
 
 ### Technology Stack
 
