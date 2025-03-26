@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/think-root/content-maestro/compare/v1.0.1...v1.1.0) (2025-03-26)
+
+
+### Bug Fixes
+
+* update repository retrieval to include sorting parameters ([0b247d9](https://github.com/think-root/content-maestro/commit/0b247d91c1c1ffcf435f2e1bd2c1d29e3e0b7ab7))
+
+
+### Features
+
+* enhance GetRepository function to support sorting parameters ([89d846c](https://github.com/think-root/content-maestro/commit/89d846c739dd7e90508076f907c364f7076fb7d4))
+
 ## [1.0.1](https://github.com/think-root/content-maestro/compare/v1.0.0...v1.0.1) (2025-03-07)
 
 
