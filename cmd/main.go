@@ -1,48 +1,66 @@
 package main
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/joho/godotenv"
-
+	"content-maestro/internal/api"
 	"content-maestro/internal/logger"
+	"content-maestro/internal/middleware"
 	"content-maestro/internal/schedule"
-	"content-maestro/internal/utils"
+	"content-maestro/internal/store"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/go-co-op/gocron"
+	"github.com/joho/godotenv"
 )
 
 var log = logger.NewLogger()
 
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Error("Error loading .env file")
-	}
-	log.Debug("environment loaded successfully")
-	if os.Getenv("APP_VERSION") == "" {
-		os.Setenv("APP_VERSION", "dev")
-	}
-}
-
 func main() {
-	utils.CreateDirIfNotExist("tmp/gh_project_img")
+	if err := godotenv.Load(); err != nil {
+		log.Error("Error loading .env file")
+		return
+	}
 
-	log.Debug("content-maestro application starting...")
-	log.Debug("APP_VERSION:", os.Getenv("APP_VERSION"))
-	log.Debug("starting schedules...")
+	dbPath := filepath.Join("data", "badger")
+	if err := os.MkdirAll(dbPath, 0755); err != nil {
+		log.Error("Error creating database directory: %v", err)
+		return
+	}
 
-	s1 := schedule.MessageCron()
-	s2 := schedule.CollectCron()
+	store, err := store.NewStore(dbPath)
+	if err != nil {
+		log.Error("Error initializing store: %v", err)
+		return
+	}
+	defer store.Close()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	if err := store.InitializeDefaultSettings(); err != nil {
+		log.Error("Error initializing default settings: %v", err)
+		return
+	}
 
-	sig := <-sigChan
+	collectScheduler := schedule.CollectCron(store)
+	messageScheduler := schedule.MessageCron(store)
 
-	log.Debug("received signal: ", sig)
-	log.Debug("shutting down...")
+	cronAPI := api.NewCronAPI(store, map[string]*gocron.Scheduler{
+		"collect": collectScheduler,
+		"message": messageScheduler,
+	})
 
-	s1.Stop()
-	s2.Stop()
+	http.Handle("/api/crons", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCrons)))
+	http.Handle("/api/crons/collect/schedule", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule)))
+	http.Handle("/api/crons/message/schedule", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule)))
+	http.Handle("/api/crons/collect/status", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))
+	http.Handle("/api/crons/message/status", middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))
+
+	port := os.Getenv("API_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Debugf("Server starting on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Error("Error starting server: %v", err)
+	}
 }
