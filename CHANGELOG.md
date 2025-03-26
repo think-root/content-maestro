@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/think-root/content-maestro/compare/v1.2.0...v1.3.0) (2025-03-26)
+
+
+### Features
+
+* add CORS middleware for handling cross-origin requests ([1becdc7](https://github.com/think-root/content-maestro/commit/1becdc7dde22c909b7a37888257c48cb8cd59087))
+
 # [1.2.0](https://github.com/think-root/content-maestro/compare/v1.1.0...v1.2.0) (2025-03-26)
 
 
