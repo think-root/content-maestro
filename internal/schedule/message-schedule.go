@@ -19,7 +19,7 @@ func MessageCron() *gocron.Scheduler {
 	s.Cron("12 10 * * *").Do(func() {
 		log.Debug("cron job started")
 
-		repo, err := repository.GetRepository(1, false)
+		repo, err := repository.GetRepository(1, false, "ASC", "date_added")
 		if err != nil {
 			log.Error("Error getting repository: %v", err)
 			return
@@ -44,7 +44,7 @@ func MessageCron() *gocron.Scheduler {
 			log.Error("Failed to load API configurations: %v", err)
 		}
 
-		for apiName, endpoint := range api.GetAPIConfigs().APIs { 
+		for apiName, endpoint := range api.GetAPIConfigs().APIs {
 			if !endpoint.Enabled {
 				continue
 			}
