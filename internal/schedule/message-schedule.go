@@ -5,6 +5,7 @@ import (
 	"content-maestro/internal/logger"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
+	"content-maestro/internal/store"
 	"content-maestro/internal/utils"
 	"strings"
 	"time"
@@ -14,9 +15,21 @@ import (
 
 var log = logger.NewLogger()
 
-func MessageCron() *gocron.Scheduler {
+func MessageCron(store *store.Store) *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron("12 10 * * *").Do(func() {
+
+	setting, err := store.GetCronSetting("message")
+	if err != nil {
+		log.Error("Error getting cron setting: %v", err)
+		return s
+	}
+
+	if setting == nil || !setting.IsActive {
+		log.Debug("Message cron is disabled")
+		return s
+	}
+
+	s.Cron(setting.Schedule).Do(func() {
 		log.Debug("cron job started")
 
 		repo, err := repository.GetRepository(1, false, "ASC", "date_added")
