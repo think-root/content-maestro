@@ -13,8 +13,14 @@ services:
     environment:
       - TZ=Europe/Kiev
       - APP_VERSION=${APP_VERSION}
+    volumes:
+      - content-maestro-data:/app/data/badger
     networks:
       - think-root-network
+
+volumes:
+  content-maestro-data:
+    name: content-maestro-data
 
 networks:
   think-root-network:
