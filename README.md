@@ -107,17 +107,44 @@ Currently configured APIs:
 
 ### Deploy
 
-The application can be deployed in two ways:
+The application can be deployed in several ways:
 
-#### 1. Direct Docker Deployment
+#### 1. Direct Docker Deployment with Docker Compose
 
 ```bash
 docker compose up -d
 ```
 
-This will create a Docker volume named `content-maestro-data` that persists the BadgerDB data. The data will survive container restarts and removals.
+This will:
+- Create a Docker volume named `content-maestro-data` that persists the BadgerDB data
+- Expose the API on the port specified in `API_PORT` (defaults to 8080)
+- Map the container's API port to the same port on the host machine
 
-#### 2. Local Development to Docker Migration
+You can then access the API at `http://localhost:$API_PORT` (or `http://localhost:8080` if `API_PORT` is not set).
+
+#### 2. Direct Docker Deployment without Docker Compose
+
+If you want to run the container directly with Docker:
+
+```bash
+# Create a volume for data persistence
+docker volume create content-maestro-data
+
+# Build the image
+docker build -t content-maestro:latest .
+
+# Run the container
+docker run -d \
+  --name content-maestro \
+  --restart always \
+  -p ${API_PORT:-8080}:${API_PORT:-8080} \
+  -v content-maestro-data:/app/data/badger \
+  --env-file .env \
+  -e TZ=Europe/Kiev \
+  content-maestro:latest
+```
+
+#### 3. Local Development to Docker Migration
 
 If you've been running the application locally and want to move to Docker while preserving your data:
 
@@ -133,12 +160,9 @@ docker volume create content-maestro-data
 docker run --rm -v $(pwd)/data/badger:/source -v content-maestro-data:/dest alpine cp -r /source/. /dest/
 ```
 
-4. Deploy with Docker Compose:
-```bash
-docker compose up -d
-```
+4. Deploy using either Docker Compose or direct Docker commands as shown above.
 
-Your existing cron settings will be preserved in the Docker deployment.
+Your existing cron settings will be preserved in the Docker deployment, and the API will be accessible at the configured port.
 
 ## Cron Management API
 
