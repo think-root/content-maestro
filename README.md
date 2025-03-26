@@ -53,7 +53,6 @@ create a **.env** file in the app root directory
 
 ⚠️ Warning: WhatsApp integration is unofficial and may risk account suspension
 
-
 ## Apis config
 
 The [apis-config.yml](internal/api/apis-config.yml) file contains configuration settings for various messaging APIs used by the content-maestro service.
@@ -122,9 +121,10 @@ docker compose up -d
 
 1. Set up your .env file
 2. Run the app:
-  ```bash
-  go run ./cmd/main.go
-  ```
+
+```bash
+go run ./cmd/main.go
+```
 
 ### Building
 
