@@ -21,4 +21,7 @@ RUN mkdir -p /app/data/badger && \
 
 USER nobody
 
+# Default port (can be overridden by API_PORT env variable)
+EXPOSE 8080
+
 CMD ["./content-maestro"]
