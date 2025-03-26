@@ -48,15 +48,13 @@ func main() {
 		"message": messageScheduler,
 	})
 
-	baseRouter := http.NewServeMux()
+	mux := http.NewServeMux()
 
-	baseRouter.Handle("/api/crons", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCrons))))
-	baseRouter.Handle("/api/crons/collect/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
-	baseRouter.Handle("/api/crons/message/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
-	baseRouter.Handle("/api/crons/collect/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
-	baseRouter.Handle("/api/crons/message/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
-
-	http.Handle("/content-maestro/", http.StripPrefix("/content-maestro", baseRouter))
+	mux.Handle("/api/crons", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCrons))))
+	mux.Handle("/api/crons/collect/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
+	mux.Handle("/api/crons/message/schedule", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule))))
+	mux.Handle("/api/crons/collect/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
+	mux.Handle("/api/crons/message/status", middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus))))
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
@@ -64,7 +62,7 @@ func main() {
 	}
 
 	log.Debugf("Server starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Error("Error starting server: %v", err)
 	}
 }
