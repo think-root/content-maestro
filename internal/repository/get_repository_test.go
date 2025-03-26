@@ -23,6 +23,8 @@ func TestGetRepository(t *testing.T) {
 		name           string
 		limit          int
 		posted         bool
+		sort_by        string
+		sort_order     string
 		serverResponse string
 		statusCode     int
 		wantErr        bool
@@ -57,6 +59,8 @@ func TestGetRepository(t *testing.T) {
 			name:           "invalid json response",
 			limit:          5,
 			posted:         true,
+			sort_by:        "date_added",
+			sort_order:     "ASC",
 			serverResponse: `invalid json`,
 			statusCode:     http.StatusOK,
 			wantErr:        true,
@@ -65,6 +69,8 @@ func TestGetRepository(t *testing.T) {
 		{
 			name:           "server error",
 			limit:          5,
+			sort_by:        "date_added",
+			sort_order:     "ASC",
 			posted:         true,
 			serverResponse: `{"error": "Internal Server Error"}`,
 			statusCode:     http.StatusInternalServerError,
@@ -96,7 +102,7 @@ func TestGetRepository(t *testing.T) {
 			getRepositoryUrl = server.URL
 			client = server.Client()
 
-			resp, err := GetRepository(tt.limit, tt.posted)
+			resp, err := GetRepository(tt.limit, tt.posted, tt.sort_order, tt.sort_by)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRepository() error = %v, wantErr %v", err, tt.wantErr)
 				return
