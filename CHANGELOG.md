@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/think-root/content-maestro/compare/v1.5.2...v1.5.3) (2025-03-27)
+
+
+### Bug Fixes
+
+* refactor directory creation to use utility function ([af986d7](https://github.com/think-root/content-maestro/commit/af986d789c30e0d064b1e8ca8367485f87f94a99))
+
 ## [1.5.2](https://github.com/think-root/content-maestro/compare/v1.5.1...v1.5.2) (2025-03-27)
 
 
