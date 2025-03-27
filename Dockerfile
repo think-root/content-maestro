@@ -22,6 +22,8 @@ RUN mkdir -p /app/data/badger && \
 
 USER nobody
 
+VOLUME ["/app/data/badger"]
+
 # Default port (can be overridden by API_PORT env variable)
 EXPOSE 8080
 

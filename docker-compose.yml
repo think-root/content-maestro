@@ -23,6 +23,11 @@ services:
 volumes:
   content-maestro-data:
     name: content-maestro-data
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data/badger
+      o: bind
 
 networks:
   think-root-network:
