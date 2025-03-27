@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/think-root/content-maestro/compare/v1.5.1...v1.5.2) (2025-03-27)
+
+
+### Bug Fixes
+
+* add missing creation of tmp/gh_project_img dir needed for socialify image generation ([a48392b](https://github.com/think-root/content-maestro/commit/a48392bb38e96190d6ab5b478b493e087f585e86))
+
 ## [1.5.1](https://github.com/think-root/content-maestro/compare/v1.5.0...v1.5.1) (2025-03-27)
 
 
