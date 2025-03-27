@@ -3,6 +3,7 @@ package api
 import (
 	"content-maestro/internal/models"
 	"content-maestro/internal/store"
+	"content-maestro/internal/validation"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -46,6 +47,11 @@ func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 	var req models.UpdateScheduleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validation.ValidateCronExpression(req.Schedule); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
