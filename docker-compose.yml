@@ -16,12 +16,13 @@ services:
     ports:
       - "${API_PORT:-8080}:${API_PORT:-8080}"
     volumes:
-      - badger-data:/app/data/badger
+      - content-maestro-data:/app/data/badger
     networks:
       - think-root-network
 
 volumes:
-  badger-data:
+  content-maestro-data:
+    name: content-maestro-data
 
 networks:
   think-root-network:

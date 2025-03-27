@@ -67,27 +67,9 @@ jobs:
               sudo apt-get install -y docker.io
             fi
 
-            if docker compose -f "$REPO_FOLDER/docker-compose.yml" ps -q &>/dev/null; then
-              echo "Stopping existing Docker container..."
-              cd "$REPO_FOLDER" && docker compose down || true
-            fi
-
-            echo "Creating a backup of the data directory if it exists..."
-            if [ -d "$REPO_FOLDER/data" ]; then
-              TEMP_CONTAINER_NAME="data-backup-$(date +%s)"
-              docker run --rm -v "$REPO_FOLDER/data:/source" -v "/tmp:/backup" --name "$TEMP_CONTAINER_NAME" alpine:3.16 sh -c "cp -r /source /backup/content-maestro-data-backup"
-            fi
-
-            echo "Removing existing repository folder..."
-            rm -rf "$REPO_FOLDER"
-            mkdir -p "$REPO_FOLDER"
-
-            echo "Restoring data directory if backup exists..."
-            if [ -d "/tmp/content-maestro-data-backup" ]; then
-              mkdir -p "$REPO_FOLDER/data"
-              TEMP_CONTAINER_NAME="data-restore-$(date +%s)"
-              docker run --rm -v "/tmp/content-maestro-data-backup:/source" -v "$REPO_FOLDER/data:/target" --name "$TEMP_CONTAINER_NAME" alpine:3.16 sh -c "cp -r /source/* /target/ && chmod -R 777 /target"
-              rm -rf "/tmp/content-maestro-data-backup"
+            if [ -d "$REPO_FOLDER" ]; then
+              echo "Removing existing repository folder..."
+              rm -rf "$REPO_FOLDER"
             fi
 
             echo "Cloning new version of the repository..."
