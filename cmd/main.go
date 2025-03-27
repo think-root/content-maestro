@@ -22,7 +22,7 @@ func main() {
 	}
 
 	dbPath := "data/badger"
-	if err := os.MkdirAll(dbPath, 0755); err != nil {
+	if err := os.MkdirAll(dbPath, 0777); err != nil {
 		log.Error("Error creating database directory: %v", err)
 		return
 	}
