@@ -4,8 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 )
+
+func init() {
+	getRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/get-repository/"
+	bearerToken = "Bearer " + os.Getenv("CONTENT_ALCHEMIST_BEARER")
+}
 
 type repo struct {
 	ID         int     `json:"id"`
@@ -33,11 +39,11 @@ type repositoryResponse struct {
 
 func GetRepository(limit int, posted bool, sort_order, sort_by string) (*repositoryResponse, error) {
 	payload := strings.NewReader(fmt.Sprintf(`{
-    		"limit": %d,
-        "posted": %t,
-				"sort_order": %s,
-    		"sort_by": %s
-    }`, limit, posted, sort_order, sort_by))
+		"limit": %d,
+		"posted": %t,
+		"sort_order": "%s",
+		"sort_by": "%s"
+	}`, limit, posted, sort_order, sort_by))
 
 	req, err := http.NewRequest(http.MethodPost, getRepositoryUrl, payload)
 	if err != nil {
