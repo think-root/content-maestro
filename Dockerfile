@@ -16,10 +16,7 @@ COPY .env /app/.env
 COPY assets/ /app/assets/
 COPY internal/api/apis-config.yml /app/internal/api/apis-config.yml
 
-RUN mkdir -p /app/data/badger && \
-    chmod -R 777 /app
-
-VOLUME ["/app/data/badger"]
+RUN chmod -R 777 /app
 
 # Default port (can be overridden by API_PORT env variable)
 EXPOSE 8080
