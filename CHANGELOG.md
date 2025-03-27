@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/think-root/content-maestro/compare/v1.5.0...v1.5.1) (2025-03-27)
+
+
+### Bug Fixes
+
+* configure repository URL and bearer token using environment variables ([f3c4c47](https://github.com/think-root/content-maestro/commit/f3c4c47a0e665aab33928a016b3cfcc258dca313))
+
 # [1.5.0](https://github.com/think-root/content-maestro/compare/v1.4.0...v1.5.0) (2025-03-27)
 
 
