@@ -3,7 +3,6 @@ package api
 import (
 	"content-maestro/internal/logger"
 	"content-maestro/internal/models"
-	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
 	"encoding/json"
@@ -19,12 +18,14 @@ var cronLogger = logger.NewLogger()
 type CronAPI struct {
 	store      *store.Store
 	schedulers map[string]*gocron.Scheduler
+	jobs       models.JobRegistry
 }
 
-func NewCronAPI(store *store.Store, schedulers map[string]*gocron.Scheduler) *CronAPI {
+func NewCronAPI(store *store.Store, schedulers map[string]*gocron.Scheduler, jobs models.JobRegistry) *CronAPI {
 	return &CronAPI{
 		store:      store,
 		schedulers: schedulers,
+		jobs:       jobs,
 	}
 }
 
@@ -80,11 +81,8 @@ func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 	scheduler.Clear()
 
 	s := gocron.NewScheduler(time.UTC)
-	switch cronName {
-	case "message":
-		s.Cron(setting.Schedule).Do(schedule.MessageJob, s)
-	case "collect":
-		s.Cron(setting.Schedule).Do(schedule.CollectJob, s)
+	if job, ok := api.jobs[cronName]; ok {
+		s.Cron(setting.Schedule).Do(job, s)
 	}
 
 	if setting.IsActive {
