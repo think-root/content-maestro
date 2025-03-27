@@ -1,15 +1,20 @@
 package api
 
 import (
+	"content-maestro/internal/logger"
 	"content-maestro/internal/models"
+	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-co-op/gocron"
 )
+
+var cronLogger = logger.NewLogger()
 
 type CronAPI struct {
 	store      *store.Store
@@ -66,13 +71,26 @@ func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setting.Schedule = req.Schedule
-	if err := api.store.UpdateCronSetting(*setting); err != nil {
+	_, err = api.store.UpdateCronSetting(setting.Name, setting.Schedule, setting.IsActive)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	scheduler.Clear()
-	scheduler.StartAsync()
+
+	s := gocron.NewScheduler(time.UTC)
+	switch cronName {
+	case "message":
+		s.Cron(setting.Schedule).Do(schedule.MessageJob, s)
+	case "collect":
+		s.Cron(setting.Schedule).Do(schedule.CollectJob, s)
+	}
+
+	if setting.IsActive {
+		s.StartAsync()
+	}
+	api.schedulers[cronName] = s
 
 	response := models.CronResponse{
 		Status:  "success",
@@ -109,14 +127,17 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setting.IsActive = req.IsActive
-	if err := api.store.UpdateCronSetting(*setting); err != nil {
+	updatedSetting, err := api.store.UpdateCronSetting(setting.Name, setting.Schedule, setting.IsActive)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	scheduler.Clear()
-	if setting.IsActive {
+	if updatedSetting.IsActive {
 		scheduler.StartAsync()
+	} else {
+		cronLogger.Debug(cronName + " cron is disabled")
 	}
 
 	response := models.CronResponse{
