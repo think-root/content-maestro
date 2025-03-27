@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -222,7 +221,7 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 	if success && apiEndpoint.ResponseType == "json" {
 		var jsonResponse interface{}
 		if err := json.Unmarshal(respBody, &jsonResponse); err != nil {
-			log.Printf("Warning: Failed to parse JSON response: %v", err)
+			cronLogger.Debug("Warning: Failed to parse JSON response: %v", err)
 		} else {
 			apiResp.JSONResponse = jsonResponse
 		}
