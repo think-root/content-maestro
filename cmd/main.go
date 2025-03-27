@@ -27,6 +27,12 @@ func main() {
 		return
 	}
 
+	imgPath := "tmp/gh_project_img"
+	if err := os.MkdirAll(imgPath, 0777); err != nil {
+		log.Error("Error creating image directory: %v", err)
+		return
+	}
+
 	store, err := store.NewStore(dbPath)
 	if err != nil {
 		log.Error("Error initializing store: %v", err)
