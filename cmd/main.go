@@ -6,7 +6,6 @@ import (
 	"content-maestro/internal/middleware"
 	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
-	"content-maestro/internal/utils"
 	"net/http"
 	"os"
 
@@ -34,7 +33,10 @@ func main() {
 	}
 	defer store.Close()
 
-	utils.CreateDirIfNotExist("./tmp/gh_project_img")
+	if err := os.MkdirAll("tmp/gh_project_img", 0777); err != nil {
+		log.Error("Error creating tmp/gh_project_img directory: %v", err)
+		return
+	}
 
 	if err := store.InitializeDefaultSettings(); err != nil {
 		log.Error("Error initializing default settings: %v", err)
