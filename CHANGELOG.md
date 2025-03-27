@@ -1,3 +1,10 @@
+## [1.5.5](https://github.com/think-root/content-maestro/compare/v1.5.4...v1.5.5) (2025-03-27)
+
+
+### Bug Fixes
+
+* change directory creation permissions to 0777 ([59a873a](https://github.com/think-root/content-maestro/commit/59a873a8fb265e8852d8d6dd6f33730207762256))
+
 ## [1.5.4](https://github.com/think-root/content-maestro/compare/v1.5.3...v1.5.4) (2025-03-27)
 
 
