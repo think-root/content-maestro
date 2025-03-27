@@ -17,12 +17,15 @@ services:
       - "${API_PORT:-8080}:${API_PORT:-8080}"
     volumes:
       - content-maestro-data:/app/data/badger
+      - content-maestro-tmp:/app/tmp/gh_project_img
     networks:
       - think-root-network
 
 volumes:
   content-maestro-data:
     name: content-maestro-data
+  content-maestro-tmp:
+    name: content-maestro-tmp
 
 networks:
   think-root-network:
