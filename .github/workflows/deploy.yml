@@ -68,6 +68,13 @@ jobs:
             fi
 
             if [ -d "$REPO_FOLDER" ]; then
+              echo "Backing up database directory..."
+              mkdir -p /tmp/badger_backup
+              if [ -d "$REPO_FOLDER/data/badger" ]; then
+                cp -r "$REPO_FOLDER/data/badger" /tmp/badger_backup/
+                chmod -R 777 /tmp/badger_backup/badger
+              fi
+              
               echo "Removing existing repository folder..."
               rm -rf "$REPO_FOLDER"
             fi
@@ -76,6 +83,13 @@ jobs:
             git clone "https://github.com/${{ github.repository }}.git" "$REPO_FOLDER"
 
             cd "$REPO_FOLDER"
+            
+            echo "Restoring database directory..."
+            mkdir -p "$REPO_FOLDER/data"
+            if [ -d "/tmp/badger_backup/badger" ]; then
+              cp -r "/tmp/badger_backup/badger" "$REPO_FOLDER/data/"
+              chmod -R 777 "$REPO_FOLDER/data/badger"
+            fi
 
             echo "Setting up .env file..."
             echo "${{ secrets.ENV_PROD }}" > .env
