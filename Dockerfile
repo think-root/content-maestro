@@ -17,10 +17,7 @@ COPY assets/ /app/assets/
 COPY internal/api/apis-config.yml /app/internal/api/apis-config.yml
 
 RUN mkdir -p /app/data/badger && \
-    chown -R nobody:nobody /app && \
-    chmod -R 777 /app/data/badger
-
-USER nobody
+    chmod -R 777 /app
 
 VOLUME ["/app/data/badger"]
 
