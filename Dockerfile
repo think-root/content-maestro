@@ -16,7 +16,9 @@ COPY .env /app/.env
 COPY assets/ /app/assets/
 COPY internal/api/apis-config.yml /app/internal/api/apis-config.yml
 
-RUN chown -R nobody:nobody /app
+RUN mkdir -p /app/data/badger && \
+    chown -R nobody:nobody /app && \
+    chmod -R 777 /app/data/badger
 
 USER nobody
 
