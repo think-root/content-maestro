@@ -34,7 +34,7 @@ func main() {
 	}
 	defer store.Close()
 
-	utils.CreateDirIfNotExist("tmp/gh_project_img")
+	utils.CreateDirIfNotExist("./tmp/gh_project_img")
 
 	if err := store.InitializeDefaultSettings(); err != nil {
 		log.Error("Error initializing default settings: %v", err)
