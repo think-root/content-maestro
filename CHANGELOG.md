@@ -1,3 +1,10 @@
+## [1.5.6](https://github.com/think-root/content-maestro/compare/v1.5.5...v1.5.6) (2025-03-27)
+
+
+### Bug Fixes
+
+* update directory path for image storage to use relative path ([7e40948](https://github.com/think-root/content-maestro/commit/7e409482214fe7f2e2783c505476b54534a0537c))
+
 ## [1.5.5](https://github.com/think-root/content-maestro/compare/v1.5.4...v1.5.5) (2025-03-27)
 
 
