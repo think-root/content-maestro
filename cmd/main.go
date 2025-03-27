@@ -6,6 +6,7 @@ import (
 	"content-maestro/internal/middleware"
 	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
+	"content-maestro/internal/utils"
 	"net/http"
 	"os"
 
@@ -22,16 +23,9 @@ func main() {
 	}
 
 	dbPath := "data/badger"
-	if err := os.MkdirAll(dbPath, 0777); err != nil {
-		log.Error("Error creating database directory: %v", err)
-		return
-	}
 
-	imgPath := "tmp/gh_project_img"
-	if err := os.MkdirAll(imgPath, 0777); err != nil {
-		log.Error("Error creating image directory: %v", err)
-		return
-	}
+	utils.CreateDirIfNotExist("tmp/gh_project_img")
+	utils.CreateDirIfNotExist(dbPath)
 
 	store, err := store.NewStore(dbPath)
 	if err != nil {
