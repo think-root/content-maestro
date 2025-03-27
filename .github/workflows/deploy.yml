@@ -71,13 +71,17 @@ jobs:
               echo "Removing existing repository folder..."
               if [ -d "$REPO_FOLDER/data" ]; then
                 echo "Preserving data directory..."
-                mv "$REPO_FOLDER/data" /tmp/content-maestro-data-backup
+                sudo mv "$REPO_FOLDER/data" /tmp/content-maestro-data-backup
+                sudo chmod -R 777 /tmp/content-maestro-data-backup
               fi
-              find "$REPO_FOLDER" -mindepth 1 -not -path "$REPO_FOLDER/data*" -delete
+              sudo find "$REPO_FOLDER" -mindepth 1 -not -path "$REPO_FOLDER/data*" -delete || echo "Warning: Some files could not be deleted"
               if [ -d "/tmp/content-maestro-data-backup" ]; then
-                mkdir -p "$REPO_FOLDER"
-                mv /tmp/content-maestro-data-backup "$REPO_FOLDER/data"
+                sudo mkdir -p "$REPO_FOLDER"
+                sudo mv /tmp/content-maestro-data-backup "$REPO_FOLDER/data"
+                sudo chmod -R 777 "$REPO_FOLDER/data"
               fi
+            else
+              sudo mkdir -p "$REPO_FOLDER"
             fi
 
             echo "Cloning new version of the repository..."
