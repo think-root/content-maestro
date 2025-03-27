@@ -8,7 +8,6 @@ import (
 	"content-maestro/internal/store"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
@@ -22,7 +21,7 @@ func main() {
 		return
 	}
 
-	dbPath := filepath.Join("data", "badger")
+	dbPath := "data/badger"
 	if err := os.MkdirAll(dbPath, 0755); err != nil {
 		log.Error("Error creating database directory: %v", err)
 		return
