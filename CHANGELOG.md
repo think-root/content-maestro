@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/think-root/content-maestro/compare/v1.3.0...v1.4.0) (2025-03-27)
+
+
+### Bug Fixes
+
+* add delay to scheduler start ([b75d341](https://github.com/think-root/content-maestro/commit/b75d34101a9030134ace529e79201f34a7428d1c))
+
+
+### Features
+
+* **cron_api:** add cron expression validation ([c5b5b98](https://github.com/think-root/content-maestro/commit/c5b5b9875e4114500ce4e40e0616df946a70dd29))
+
 # [1.3.0](https://github.com/think-root/content-maestro/compare/v1.2.0...v1.3.0) (2025-03-26)
 
 
