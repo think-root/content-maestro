@@ -23,6 +23,11 @@ func MessageJob(s *gocron.Scheduler) {
 		return
 	}
 
+	if len(repo.Data.Items) == 0 {
+		log.Debug("No items found in repository")
+		return
+	}
+
 	item := repo.Data.Items[0]
 	username_repo := strings.TrimPrefix(item.URL, "https://github.com/")
 	image_name := "./tmp/gh_project_img/image.png"
