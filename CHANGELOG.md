@@ -1,3 +1,13 @@
+# [1.6.0](https://github.com/think-root/content-maestro/compare/v1.5.7...v1.6.0) (2025-03-27)
+
+
+### Features
+
+* add JobFunc type and JobRegistry for scheduling jobs ([0a7fb8c](https://github.com/think-root/content-maestro/commit/0a7fb8cd4dba78b4aae39b738c781caa0442320c))
+* implement API request handling in MessageJob and add InitJobs function ([52acf4e](https://github.com/think-root/content-maestro/commit/52acf4e8983a606c596458a145b21fbfbc7a0ee9))
+* pass initialized jobs to CronAPI for enhanced job scheduling ([632dc16](https://github.com/think-root/content-maestro/commit/632dc164a5b7bdfa7633b97f495c7059ccfe4b96))
+* refactor CronAPI to accept JobRegistry and streamline job scheduling ([f2d0313](https://github.com/think-root/content-maestro/commit/f2d03138cfa2a789d55b295d3fd3bcda49ab57bf))
+
 ## [1.5.7](https://github.com/think-root/content-maestro/compare/v1.5.6...v1.5.7) (2025-03-27)
 
 
