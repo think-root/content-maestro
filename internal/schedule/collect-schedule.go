@@ -24,73 +24,67 @@ type generateResponse struct {
 	DontAdded []string `json:"dont_added"`
 }
 
-func CollectCron(store *store.Store) *gocron.Scheduler {
-	s := gocron.NewScheduler(time.UTC)
+func CollectJob(s *gocron.Scheduler) {
+	log.Debug("Collecting posts...")
 
-	setting, err := store.GetCronSetting("collect")
+	payload := generateRequest{
+		MaxRepos:           5,
+		Since:              "daily",
+		SpokenLanguageCode: "en",
+	}
+
+	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		log.Error("Error getting cron setting: %v", err)
-		return s
+		log.Error("Error marshaling request: %v", err)
+		return
 	}
 
-	if setting == nil || !setting.IsActive {
+	req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Error("Error creating request: %v", err)
+		return
+	}
+
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("CONTENT_ALCHEMIST_BEARER"))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error("Error sending request: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Error reading response: %v", err)
+		return
+	}
+
+	var response generateResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		log.Error("Error unmarshaling response: %v", err)
+		return
+	}
+
+	if response.Status == "ok" {
+		log.Debugf("Successfully collected %d new repositories", len(response.Added))
+	}
+}
+
+func CollectCron(store *store.Store) *gocron.Scheduler {
+	setting, err := store.GetCronSetting("collect")
+	if err != nil || setting == nil || !setting.IsActive {
 		log.Debug("Collect cron is disabled")
-		return s
+		return gocron.NewScheduler(time.UTC)
 	}
 
-	s.Cron(setting.Schedule).Do(func() {
-		log.Debug("Collecting posts...")
-
-		payload := generateRequest{
-			MaxRepos:           5,
-			Since:              "daily",
-			SpokenLanguageCode: "en",
-		}
-
-		jsonData, err := json.Marshal(payload)
-		if err != nil {
-			log.Error("Error marshaling request: %v", err)
-			return
-		}
-
-		req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
-		if err != nil {
-			log.Error("Error creating request: %v", err)
-			return
-		}
-
-		req.Header.Set("Accept", "*/*")
-		req.Header.Set("Connection", "keep-alive")
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+os.Getenv("CONTENT_ALCHEMIST_BEARER"))
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Error("Error sending request: %v", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Error("Error reading response: %v", err)
-			return
-		}
-
-		var response generateResponse
-		if err := json.Unmarshal(body, &response); err != nil {
-			log.Error("Error unmarshaling response: %v", err)
-			return
-		}
-
-		if response.Status == "ok" {
-			log.Debugf("Successfully collected %d new repositories", len(response.Added))
-		}
-	})
-
+	s := gocron.NewScheduler(time.UTC)
+	s.Cron(setting.Schedule).Do(CollectJob, s)
 	s.StartAsync()
-	time.Sleep(time.Second)
 	log.Debug("scheduler started successfully")
 	return s
 }
