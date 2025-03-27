@@ -90,7 +90,7 @@ func CollectCron(store *store.Store) *gocron.Scheduler {
 	})
 
 	s.StartAsync()
-
+	time.Sleep(time.Second)
 	log.Debug("scheduler started successfully")
 	return s
 }
