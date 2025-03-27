@@ -23,16 +23,18 @@ func main() {
 	}
 
 	dbPath := "data/badger"
-
-	utils.CreateDirIfNotExist("tmp/gh_project_img")
-	utils.CreateDirIfNotExist(dbPath)
-
+	if err := os.MkdirAll(dbPath, 0777); err != nil {
+		log.Error("Error creating database directory: %v", err)
+		return
+	}
 	store, err := store.NewStore(dbPath)
 	if err != nil {
 		log.Error("Error initializing store: %v", err)
 		return
 	}
 	defer store.Close()
+
+	utils.CreateDirIfNotExist("tmp/gh_project_img")
 
 	if err := store.InitializeDefaultSettings(); err != nil {
 		log.Error("Error initializing default settings: %v", err)
