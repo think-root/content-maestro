@@ -8,18 +8,24 @@ import (
 )
 
 type repo struct {
-	ID     int    `json:"id"`
-	Posted bool   `json:"posted"`
-	URL    string `json:"url"`
-	Text   string `json:"text"`
+	ID         int     `json:"id"`
+	Posted     bool    `json:"posted"`
+	URL        string  `json:"url"`
+	Text       string  `json:"text"`
+	DateAdded  string  `json:"date_added"`
+	DatePosted *string `json:"date_posted"`
 }
 
 type repositoryResponse struct {
 	Data struct {
-		All      int    `json:"all"`
-		Posted   int    `json:"posted"`
-		Unposted int    `json:"unposted"`
-		Items    []repo `json:"items"`
+		All        int    `json:"all"`
+		Posted     int    `json:"posted"`
+		Unposted   int    `json:"unposted"`
+		Items      []repo `json:"items"`
+		Page       int    `json:"page"`
+		PageSize   int    `json:"page_size"`
+		TotalPages int    `json:"total_pages"`
+		TotalItems int    `json:"total_items"`
 	} `json:"data"`
 	Message string `json:"message"`
 	Status  string `json:"status"`
