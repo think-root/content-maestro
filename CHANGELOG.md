@@ -1,3 +1,10 @@
+## [1.5.4](https://github.com/think-root/content-maestro/compare/v1.5.3...v1.5.4) (2025-03-27)
+
+
+### Bug Fixes
+
+* replace manual directory creation with os.MkdirAll for database path ([0f8bd0b](https://github.com/think-root/content-maestro/commit/0f8bd0b87013686a4050a7c9fcb8f9dafb31b523))
+
 ## [1.5.3](https://github.com/think-root/content-maestro/compare/v1.5.2...v1.5.3) (2025-03-27)
 
 
