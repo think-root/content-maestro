@@ -1,3 +1,14 @@
+# [1.5.0](https://github.com/think-root/content-maestro/compare/v1.4.0...v1.5.0) (2025-03-27)
+
+
+### Features
+
+* add new store package for managing cron settings ([23b2e48](https://github.com/think-root/content-maestro/commit/23b2e48c12a5c56c53524279b68777b1da3e69b9))
+* **cron:** add new cron jobs for messaging and collecting posts ([d27ea7b](https://github.com/think-root/content-maestro/commit/d27ea7bb3d8510a4887d8c0ffc90c1e8469f290b))
+* **cron:** add new scheduler with cron job support ([4b45a75](https://github.com/think-root/content-maestro/commit/4b45a754e8bf761813440a3323d4589d375c0bc4))
+* **middleware:** add logging middleware ([e324fa5](https://github.com/think-root/content-maestro/commit/e324fa5e8363f15266d1c7883fe09455101a48df))
+* **scheduler:** add scheduler update function ([2ed98f1](https://github.com/think-root/content-maestro/commit/2ed98f13a343d89c49bda20106ce8665009d3878))
+
 # [1.4.0](https://github.com/think-root/content-maestro/compare/v1.3.0...v1.4.0) (2025-03-27)
 
 
