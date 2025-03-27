@@ -1,3 +1,10 @@
+## [1.5.7](https://github.com/think-root/content-maestro/compare/v1.5.6...v1.5.7) (2025-03-27)
+
+
+### Bug Fixes
+
+* replace utils function with os.MkdirAll for directory creation ([56cba04](https://github.com/think-root/content-maestro/commit/56cba041aa11d0d1071bdb45e68f0ec1e5f909c3))
+
 ## [1.5.6](https://github.com/think-root/content-maestro/compare/v1.5.5...v1.5.6) (2025-03-27)
 
 
