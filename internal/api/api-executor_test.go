@@ -94,7 +94,7 @@ func TestExecuteRequest(t *testing.T) {
 			name: "successful request",
 			reqConfig: RequestConfig{
 				APIName:  "test_api",
-				JSONBody: map[string]interface{}{"test": "data"},
+				JSONBody: map[string]any{"test": "data"},
 			},
 			wantStatus:  200,
 			wantSuccess: true,
