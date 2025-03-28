@@ -2,12 +2,12 @@
 
 <div align="center">
 
-![License](https://img.shields.io/github/license/think-root/content-maestro?style=flat-square)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro)](https://github.com/think-root/content-maestro)
-[![Version](https://img.shields.io/github/v/release/think-root/content-maestro)](https://github.com/think-root/content-maestro/releases)
-[![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
-[![Deploy Status](https://github.com/think-root/content-maestro/workflows/Deploy%20content-maestro/badge.svg)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/think-root/content-maestro)](https://goreportcard.com/report/github.com/think-root/content-maestro)
+![License](https://img.shields.io/github/license/think-root/content-maestro?style=flat-square&color=blue)
+[![Go Report Card](https://goreportcard.com/badge/github.com/think-root/content-maestro?style=flat-square)](https://goreportcard.com/report/github.com/think-root/content-maestro)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/think-root/content-maestro?style=flat-square&color=blue)](https://github.com/think-root/content-maestro)
+[![Deploy Status](https://img.shields.io/github/actions/workflow/status/think-root/content-maestro/deploy.yml?branch=main&label=Deploy&style=flat-square)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
+[![Version](https://img.shields.io/github/v/release/think-root/content-maestro?style=flat-square&color=blue)](https://github.com/think-root/content-maestro/releases)
+[![Changelog](https://img.shields.io/badge/changelog-view-blue?style=flat-square)](CHANGELOG.md)
 <!-- ![Coverage](https://img.shields.io/badge/Coverage-28%25-red.svg) -->
 
 <img src="baner.png" alt="baner">
@@ -53,7 +53,8 @@ create a **.env** file in the app root directory
 | API_TOKEN               | Authentication token for Cron Management API                                                               |
 | API_PORT               | Port for the Cron Management API server (default: 8080)                                                    |
 
-⚠️ Warning: WhatsApp integration is unofficial and may risk account suspension
+> [!WARNING]
+> WhatsApp integration is unofficial and may risk account suspension
 
 ## Apis config
 
