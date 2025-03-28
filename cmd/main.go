@@ -43,14 +43,15 @@ func main() {
 		return
 	}
 
-	collectScheduler := schedule.CollectCron(store)
-	messageScheduler := schedule.MessageCron(store)
+	settings, _ := store.GetAllCronSettings()
+	schedulers := make(map[string]*gocron.Scheduler)
+	
+	for _, setting := range settings {
+		schedulers[setting.Name] = schedule.NewScheduler(store, setting.Name, setting.Schedule)
+	}
 
 	jobs := schedule.InitJobs()
-	cronAPI := api.NewCronAPI(store, map[string]*gocron.Scheduler{
-		"collect": collectScheduler,
-		"message": messageScheduler,
-	}, jobs)
+	cronAPI := api.NewCronAPI(store, schedulers, jobs)
 
 	mux := http.NewServeMux()
 
