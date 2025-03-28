@@ -1,3 +1,11 @@
+# [1.7.0](https://github.com/think-root/content-maestro/compare/v1.6.0...v1.7.0) (2025-03-28)
+
+
+### Features
+
+* add job initialization and scheduling functionality ([c458fa8](https://github.com/think-root/content-maestro/commit/c458fa8f7fdf385312a33cbfe39b5cd8329c565a))
+* refactor main to dynamically initialize schedulers from Cron settings ([9bb2f2e](https://github.com/think-root/content-maestro/commit/9bb2f2e92d381b49332caa84b8907cc02bc82b4b))
+
 # [1.6.0](https://github.com/think-root/content-maestro/compare/v1.5.7...v1.6.0) (2025-03-27)
 
 
