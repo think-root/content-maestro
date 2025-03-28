@@ -3,7 +3,6 @@ package schedule
 import (
 	"content-maestro/internal/api"
 	"content-maestro/internal/logger"
-	"content-maestro/internal/models"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
@@ -73,12 +72,12 @@ func MessageJob(s *gocron.Scheduler) {
 		case "json":
 			req = api.RequestConfig{
 				APIName:  apiName,
-				JSONBody: map[string]interface{}{"text": item.Text, "url": item.URL},
+				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
 			}
 		default:
 			req = api.RequestConfig{
 				APIName:  apiName,
-				JSONBody: map[string]interface{}{"text": item.Text, "url": item.URL},
+				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
 			}
 		}
 
@@ -97,12 +96,6 @@ func MessageJob(s *gocron.Scheduler) {
 	err = utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
 	if err != nil {
 		log.Error(err)
-	}
-}
-
-func InitJobs() models.JobRegistry {
-	return models.JobRegistry{
-		"message": MessageJob,
 	}
 }
 
