@@ -36,18 +36,18 @@ type APIEndpoint struct {
 type RequestConfig struct {
 	APIName     string                 `json:"api_name" yaml:"api_name"`
 	URLParams   map[string]string      `json:"url_params" yaml:"url_params"`
-	JSONBody    map[string]interface{} `json:"json_body" yaml:"json_body"`
+	JSONBody    map[string]any `json:"json_body" yaml:"json_body"`
 	FormFields  map[string]string      `json:"form_fields" yaml:"form_fields"`
 	FileFields  map[string]string      `json:"file_fields" yaml:"file_fields"`
 	RawBody     []byte                 `json:"-" yaml:"-"`
-	ExtraParams map[string]interface{} `json:"extra_params" yaml:"extra_params"`
+	ExtraParams map[string]any `json:"extra_params" yaml:"extra_params"`
 }
 
 type APIResponse struct {
 	Success      bool          `json:"success"`
 	StatusCode   int           `json:"status_code"`
 	Body         []byte        `json:"-"`
-	JSONResponse interface{}   `json:"response,omitempty"`
+	JSONResponse any   `json:"response,omitempty"`
 	Error        string        `json:"error,omitempty"`
 	ResponseTime time.Duration `json:"response_time"`
 	APIName      string        `json:"api_name"`
@@ -219,7 +219,7 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 	}
 
 	if success && apiEndpoint.ResponseType == "json" {
-		var jsonResponse interface{}
+		var jsonResponse any
 		if err := json.Unmarshal(respBody, &jsonResponse); err != nil {
 			cronLogger.Debug("Warning: Failed to parse JSON response: %v", err)
 		} else {
