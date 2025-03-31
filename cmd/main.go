@@ -1,10 +1,10 @@
 package main
 
 import (
-	"content-maestro/internal/api"
 	"content-maestro/internal/logger"
 	"content-maestro/internal/middleware"
 	"content-maestro/internal/schedule"
+	"content-maestro/internal/server"
 	"content-maestro/internal/store"
 	"net/http"
 	"os"
@@ -45,13 +45,13 @@ func main() {
 
 	settings, _ := store.GetAllCronSettings()
 	schedulers := make(map[string]*gocron.Scheduler)
-	
+
 	for _, setting := range settings {
 		schedulers[setting.Name] = schedule.NewScheduler(store, setting.Name, setting.Schedule)
 	}
 
-	jobs := schedule.InitJobs()
-	cronAPI := api.NewCronAPI(store, schedulers, jobs)
+	jobs := schedule.InitJobs(store)
+	cronAPI := server.NewCronAPI(store, schedulers, jobs)
 
 	mux := http.NewServeMux()
 
@@ -60,6 +60,8 @@ func main() {
 	mux.Handle("/api/crons/message/schedule", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateSchedule)))))
 	mux.Handle("/api/crons/collect/status", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))))
 	mux.Handle("/api/crons/message/status", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateStatus)))))
+	mux.Handle("/api/collect-settings", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCollectSettings)))))
+	mux.Handle("/api/collect-settings/update", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.UpdateCollectSettings)))))
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
