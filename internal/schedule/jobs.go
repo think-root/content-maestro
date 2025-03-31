@@ -8,9 +8,11 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-func InitJobs() models.JobRegistry {
+func InitJobs(store *store.Store) models.JobRegistry {
 	return models.JobRegistry{
-		"collect": CollectJob,
+		"collect": func(s *gocron.Scheduler) {
+			CollectJob(s, store)
+		},
 		"message": MessageJob,
 	}
 }
@@ -18,7 +20,7 @@ func InitJobs() models.JobRegistry {
 func NewScheduler(store *store.Store, name string, schedule string) *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
 
-	if job, exists := InitJobs()[name]; exists && schedule != "" {
+	if job, exists := InitJobs(store)[name]; exists && schedule != "" {
 		s.Cron(schedule).Do(job, s)
 		s.StartAsync()
 	}
