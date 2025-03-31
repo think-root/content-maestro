@@ -165,9 +165,9 @@ docker run --rm -v $(pwd)/data/badger:/source -v content-maestro-data:/dest alpi
 
 Your existing cron settings will be preserved in the Docker deployment, and the API will be accessible at the configured port.
 
-## Cron Management API
+## API Reference
 
-The application now includes a REST API for managing cron jobs. This API allows you to view, update schedules, and control the status of cron jobs.
+The application provides a comprehensive REST API for managing both cron jobs and repository collection settings. This API enables you to control scheduled tasks, view and update cron schedules, manage job statuses, and configure repository collection parameters.
 
 ### Authentication
 
