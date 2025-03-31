@@ -216,6 +216,14 @@ Request body:
 }
 ```
 
+Response example:
+```json
+{
+  "status": "success",
+  "message": "Schedule updated successfully"
+}
+```
+
 #### Update Cron Status
 ```http
 PUT /api/crons/{name}/status
@@ -229,11 +237,58 @@ Request body:
 }
 ```
 
+Response example:
+```json
+{
+  "status": "success",
+  "message": "Status updated successfully"
+}
+```
+
+#### Get Collect Settings
+```http
+GET /api/collect-settings
+```
+Returns the current settings for repository collection.
+
+Response example:
+```json
+{
+  "max_repos": 5,
+  "since": "daily",
+  "spoken_language_code": "en"
+}
+```
+
+#### Update Collect Settings
+```http
+PUT /api/collect-settings
+```
+Update the repository collection settings.
+
+Request body:
+```json
+{
+  "max_repos": 10,
+  "since": "weekly",
+  "spoken_language_code": "uk"
+}
+```
+
+Response example:
+```json
+{
+  "status": "success",
+  "message": "Collect settings updated successfully"
+}
+```
+
 ### Example Usage
 
 1. Get all cron settings:
 ```bash
-curl -H "Authorization: Bearer your_api_token" http://localhost:8080/api/crons
+curl -H "Authorization: Bearer your_api_token" \
+  http://localhost:8080/api/crons
 ```
 
 2. Update collect schedule:
@@ -254,9 +309,28 @@ curl -X PUT \
   http://localhost:8080/api/crons/message/status
 ```
 
+4. Get collect settings:
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  http://localhost:8080/api/collect-settings
+```
+
+5. Update collect settings:
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer your_api_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "max_repos": 10,
+    "since": "weekly",
+    "spoken_language_code": "uk"
+  }' \
+  http://localhost:8080/api/collect-settings
+```
+
 ### Data Persistence
 
-The cron settings are stored in BadgerDB, a performant key-value store. The data is persisted in the `data/badger` directory. When running in Docker, make sure to configure a volume for this directory to maintain settings across container restarts.
+All settings are stored in BadgerDB, a performant key-value store. The data is persisted in the `data/badger` directory. When running in Docker, make sure to configure a volume for this directory to maintain settings across container restarts.
 
 ## Contribution
 
