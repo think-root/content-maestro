@@ -12,21 +12,6 @@ type CollectSettings struct {
 	SpokenLanguageCode string `json:"spoken_language_code"`
 }
 
-func (s *Store) InitializeDefaultCollectSettings() error {
-	settings := CollectSettings{
-		MaxRepos:           5,
-		Since:              "daily",
-		SpokenLanguageCode: "en",
-	}
-	return s.db.Update(func(txn *badger.Txn) error {
-		data, err := json.Marshal(settings)
-		if err != nil {
-			return err
-		}
-		return txn.Set([]byte("collect_settings"), data)
-	})
-}
-
 func (s *Store) GetCollectSettings() (*CollectSettings, error) {
 	var settings CollectSettings
 	err := s.db.View(func(txn *badger.Txn) error {

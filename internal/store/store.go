@@ -115,13 +115,13 @@ func (s *Store) InitializeDefaultSettings() error {
 	defaults := []models.CronSetting{
 		{
 			Name:      "collect",
-			Schedule:  "0 13 * * 6",
+			Schedule:  "13 13 * * 6",
 			IsActive:  true,
 			UpdatedAt: time.Now(),
 		},
 		{
 			Name:      "message",
-			Schedule:  "12 10 * * *",
+			Schedule:  "12 12 * * *",
 			IsActive:  true,
 			UpdatedAt: time.Now(),
 		},
@@ -140,5 +140,31 @@ func (s *Store) InitializeDefaultSettings() error {
 		}
 	}
 
-	return nil
+	var collectSettings CollectSettings
+	err := s.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("collect_settings"))
+		if err == badger.ErrKeyNotFound {
+			return err
+		}
+		return item.Value(func(val []byte) error {
+			return json.Unmarshal(val, &collectSettings)
+		})
+	})
+
+	if err == badger.ErrKeyNotFound {
+		defaultCollectSettings := CollectSettings{
+			MaxRepos:           5,
+			Since:              "daily",
+			SpokenLanguageCode: "en",
+		}
+		return s.db.Update(func(txn *badger.Txn) error {
+			data, err := json.Marshal(defaultCollectSettings)
+			if err != nil {
+				return err
+			}
+			return txn.Set([]byte("collect_settings"), data)
+		})
+	}
+
+	return err
 }
