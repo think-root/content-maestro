@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/think-root/content-maestro/compare/v1.7.0...v1.8.0) (2025-03-31)
+
+
+### Features
+
+* add new endpoints for managing collect settings ([76313b5](https://github.com/think-root/content-maestro/commit/76313b5d75f06a7273f289e8f67345abc4f32c9e))
+* **store:** add collect settings management ([20051e3](https://github.com/think-root/content-maestro/commit/20051e3013a07f1b97fdfbe6037feaa5aeae3eb1))
+
 # [1.7.0](https://github.com/think-root/content-maestro/compare/v1.6.0...v1.7.0) (2025-03-28)
 
 
