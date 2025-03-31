@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"content-maestro/internal/logger"
@@ -13,7 +13,7 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-var cronLogger = logger.NewLogger()
+var log = logger.NewLogger()
 
 type CronAPI struct {
 	store      *store.Store
@@ -30,6 +30,11 @@ func NewCronAPI(store *store.Store, schedulers map[string]*gocron.Scheduler, job
 }
 
 func (api *CronAPI) GetCrons(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	settings, err := api.store.GetAllCronSettings()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -41,6 +46,11 @@ func (api *CronAPI) GetCrons(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	cronName := strings.TrimPrefix(r.URL.Path, "/api/crons/")
 	cronName = strings.TrimSuffix(cronName, "/schedule")
 
@@ -99,6 +109,11 @@ func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	cronName := strings.TrimPrefix(r.URL.Path, "/api/crons/")
 	cronName = strings.TrimSuffix(cronName, "/status")
 
@@ -135,7 +150,7 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if updatedSetting.IsActive {
 		scheduler.StartAsync()
 	} else {
-		cronLogger.Debug(cronName + " cron is disabled")
+		log.Debug(cronName + " cron is disabled")
 	}
 
 	response := models.CronResponse{
@@ -144,4 +159,58 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (api *CronAPI) UpdateCollectSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var settings store.CollectSettings
+	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if settings.MaxRepos < 1 {
+		http.Error(w, "MaxRepos must be greater than 0", http.StatusBadRequest)
+		return
+	}
+	if settings.Since == "" {
+		http.Error(w, "Since cannot be empty", http.StatusBadRequest)
+		return
+	}
+	if settings.SpokenLanguageCode == "" {
+		http.Error(w, "SpokenLanguageCode cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if err := api.store.UpdateCollectSettings(&settings); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.CronResponse{
+		Status:  "success",
+		Message: "Collect settings updated successfully",
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (api *CronAPI) GetCollectSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	settings, err := api.store.GetCollectSettings()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(settings)
 }
