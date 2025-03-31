@@ -24,13 +24,19 @@ type generateResponse struct {
 	DontAdded []string `json:"dont_added"`
 }
 
-func CollectJob(s *gocron.Scheduler) {
+func CollectJob(s *gocron.Scheduler, store *store.Store) {
 	log.Debug("Collecting posts...")
 
+	settings, err := store.GetCollectSettings()
+	if err != nil {
+		log.Error("Error getting collect settings: %v", err)
+		return
+	}
+
 	payload := generateRequest{
-		MaxRepos:           5,
-		Since:              "daily",
-		SpokenLanguageCode: "en",
+		MaxRepos:           settings.MaxRepos,
+		Since:              settings.Since,
+		SpokenLanguageCode: settings.SpokenLanguageCode,
 	}
 
 	jsonData, err := json.Marshal(payload)
@@ -83,7 +89,7 @@ func CollectCron(store *store.Store) *gocron.Scheduler {
 	}
 
 	s := gocron.NewScheduler(time.UTC)
-	s.Cron(setting.Schedule).Do(CollectJob, s)
+	s.Cron(setting.Schedule).Do(CollectJob, s, store)
 	s.StartAsync()
 	log.Debug("scheduler started successfully")
 	return s
