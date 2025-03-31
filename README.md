@@ -8,6 +8,7 @@
 [![Deploy Status](https://img.shields.io/github/actions/workflow/status/think-root/content-maestro/deploy.yml?branch=main&label=Deploy&style=flat-square)](https://github.com/think-root/content-maestro/actions/workflows/deploy.yml)
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro?style=flat-square&color=blue)](https://github.com/think-root/content-maestro/releases)
 [![Changelog](https://img.shields.io/badge/changelog-view-blue?style=flat-square)](CHANGELOG.md)
+
 <!-- ![Coverage](https://img.shields.io/badge/Coverage-28%25-red.svg) -->
 
 <img src="baner.png" alt="baner">
@@ -50,8 +51,8 @@ create a **.env** file in the app root directory
 | WAPP_SERVER_URL          | The URL of the WhatsApp integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_URL      | The URL of the Telegram integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_TOKEN    | Your API key for integration with [Telegram](https://github.com/think-root/telegram-connector)            |
-| API_TOKEN               | Authentication token for Cron Management API                                                               |
-| API_PORT               | Port for the Cron Management API server (default: 8080)                                                    |
+| API_TOKEN                | Authentication token for the API server                             |
+| API_PORT                 | Port for the API server (default: 8080)                                                   |
 
 > [!WARNING]
 > WhatsApp integration is unofficial and may risk account suspension
@@ -117,6 +118,7 @@ docker compose up -d
 ```
 
 This will:
+
 - Create a Docker volume named `content-maestro-data` that persists the BadgerDB data
 - Expose the API on the port specified in `API_PORT` (defaults to 8080)
 - Map the container's API port to the same port on the host machine
@@ -151,11 +153,13 @@ If you've been running the application locally and want to move to Docker while 
 
 1. Stop the local application
 2. Create a Docker volume:
+
 ```bash
 docker volume create content-maestro-data
 ```
 
 3. Copy your local BadgerDB data to the Docker volume:
+
 ```bash
 # Assuming your local data is in ./data/badger
 docker run --rm -v $(pwd)/data/badger:/source -v content-maestro-data:/dest alpine cp -r /source/. /dest/
@@ -180,12 +184,15 @@ Authorization: Bearer your_api_token
 ### Available Endpoints
 
 #### Get All Cron Settings
+
 ```http
 GET /api/crons
 ```
+
 Returns the current settings for all cron jobs.
 
 Response example:
+
 ```json
 [
   {
@@ -204,12 +211,15 @@ Response example:
 ```
 
 #### Update Cron Schedule
+
 ```http
 PUT /api/crons/{name}/schedule
 ```
+
 Update the schedule for a specific cron job. The `name` can be either `collect` or `message`.
 
 Request body:
+
 ```json
 {
   "schedule": "0 15 * * 6"
@@ -217,6 +227,7 @@ Request body:
 ```
 
 Response example:
+
 ```json
 {
   "status": "success",
@@ -225,12 +236,15 @@ Response example:
 ```
 
 #### Update Cron Status
+
 ```http
 PUT /api/crons/{name}/status
 ```
+
 Enable or disable a specific cron job. The `name` can be either `collect` or `message`.
 
 Request body:
+
 ```json
 {
   "is_active": false
@@ -238,6 +252,7 @@ Request body:
 ```
 
 Response example:
+
 ```json
 {
   "status": "success",
@@ -246,12 +261,15 @@ Response example:
 ```
 
 #### Get Collect Settings
+
 ```http
 GET /api/collect-settings
 ```
+
 Returns the current settings for repository collection.
 
 Response example:
+
 ```json
 {
   "max_repos": 5,
@@ -261,12 +279,15 @@ Response example:
 ```
 
 #### Update Collect Settings
+
 ```http
 PUT /api/collect-settings
 ```
+
 Update the repository collection settings.
 
 Request body:
+
 ```json
 {
   "max_repos": 10,
@@ -276,6 +297,7 @@ Request body:
 ```
 
 Response example:
+
 ```json
 {
   "status": "success",
@@ -286,12 +308,14 @@ Response example:
 ### Example Usage
 
 1. Get all cron settings:
+
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
   http://localhost:8080/api/crons
 ```
 
 2. Update collect schedule:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer your_api_token" \
@@ -301,6 +325,7 @@ curl -X PUT \
 ```
 
 3. Disable message cron:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer your_api_token" \
@@ -310,12 +335,14 @@ curl -X PUT \
 ```
 
 4. Get collect settings:
+
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
   http://localhost:8080/api/collect-settings
 ```
 
 5. Update collect settings:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer your_api_token" \
