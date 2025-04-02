@@ -1,19 +1,15 @@
 package server
 
 import (
-	"content-maestro/internal/logger"
 	"content-maestro/internal/models"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-co-op/gocron"
 )
-
-var log = logger.NewLogger()
 
 type CronAPI struct {
 	store      *store.Store
@@ -88,17 +84,15 @@ func (api *CronAPI) UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	scheduler.Stop()
 	scheduler.Clear()
 
-	s := gocron.NewScheduler(time.UTC)
 	if job, ok := api.jobs[cronName]; ok {
-		s.Cron(setting.Schedule).Do(job, s)
+		scheduler.Cron(setting.Schedule).Do(job, scheduler)
+		if setting.IsActive {
+			scheduler.StartAsync()
+		}
 	}
-
-	if setting.IsActive {
-		s.StartAsync()
-	}
-	api.schedulers[cronName] = s
 
 	response := models.CronResponse{
 		Status:  "success",
@@ -146,11 +140,10 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scheduler.Clear()
+	scheduler.Stop()
+
 	if updatedSetting.IsActive {
 		scheduler.StartAsync()
-	} else {
-		log.Debug(cronName + " cron is disabled")
 	}
 
 	response := models.CronResponse{
