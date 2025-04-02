@@ -141,9 +141,13 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	scheduler.Stop()
+	scheduler.Clear()
 
 	if updatedSetting.IsActive {
-		scheduler.StartAsync()
+		if job, ok := api.jobs[cronName]; ok {
+			scheduler.Cron(setting.Schedule).Do(job, scheduler)
+			scheduler.StartAsync()
+		}
 	}
 
 	response := models.CronResponse{
