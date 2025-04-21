@@ -15,8 +15,8 @@ var log = logger.NewLogger()
 func Socialify(usernameRepo string) error {
 	log.Debug("Starting Socialify image parsing")
 
-	maxRetries := 3
-	retryInterval := 10 * time.Second
+	maxRetries := 5
+	retryInterval := 20 * time.Second
 
 	var lastErr error
 	for attempt := 1; attempt <= maxRetries; attempt++ {
@@ -38,7 +38,7 @@ func Socialify(usernameRepo string) error {
 }
 
 func trySocialify(usernameRepo string) error {
-	patterns := []string{"Diagonal Stripes", "Charlie Brown", "Brick Wall", "Circuit Board", "Formal Invitation", "Signal"}
+	patterns := []string{"Diagonal Stripes", "Charlie Brown", "Brick Wall", "Circuit Board", "Formal Invitation"}
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomPattern := patterns[rng.Intn(len(patterns))]
