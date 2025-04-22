@@ -6,6 +6,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -38,13 +39,28 @@ func Socialify(usernameRepo string) error {
 }
 
 func trySocialify(usernameRepo string) error {
-	patterns := []string{"Diagonal Stripes", "Charlie Brown", "Brick Wall", "Circuit Board", "Formal Invitation"}
+	patternsArray := []string{"Diagonal Stripes", "Charlie Brown", "Brick Wall", "Circuit Board", "Formal Invitation"}
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomPattern := patterns[rng.Intn(len(patterns))]
-	socialifyUrl := fmt.Sprintf("https://socialify.git.ci/%s/png?description=0&font=Jost&forks=1&issues=1&language=1&name=1&owner=1&pattern=%s&pulls=1&stargazers=1&theme=Light", usernameRepo, randomPattern)
+	randomPattern := patternsArray[rng.Intn(len(patternsArray))]
 
-	response, err := http.Get(socialifyUrl)
+	escapedPattern := url.QueryEscape(randomPattern)
+	socialifyUrl := fmt.Sprintf(
+		"https://socialify.git.ci/%s/png?description=0&font=Jost&forks=1&issues=1&language=1&name=1&owner=1&pattern=%s&pulls=1&stargazers=1&theme=Light",
+		usernameRepo, escapedPattern,
+	)
+
+	req, err := http.NewRequest("GET", socialifyUrl, nil)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Content-Maestro/1.0")
+	req.Header.Set("Accept", "image/png")
+
+	client := &http.Client{}
+	response, err := client.Do(req)
 	if err != nil {
 		log.Error(err)
 		return err
