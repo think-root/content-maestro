@@ -6,15 +6,23 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 func setupTestEnvironment(t *testing.T) func() {
+	// Встановлюємо швидкі налаштування для тестів
+	SetRetryConfig(RetryConfig{
+		MaxRetries:    2,
+		RetryInterval: 100 * time.Millisecond,
+	})
+
 	err := os.MkdirAll("./tmp/gh_project_img", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	return func() {
+		ResetRetryConfig()
 		os.RemoveAll("./tmp")
 	}
 }
@@ -71,14 +79,18 @@ func TestSocialify(t *testing.T) {
 				},
 			}
 
-			oldClient := http.DefaultClient
-			http.DefaultClient = client
-			defer func() { http.DefaultClient = oldClient }()
+			oldClient := SocialifyHTTPClient
+			SocialifyHTTPClient = client
+			defer func() { SocialifyHTTPClient = oldClient }()
 
 			err := Socialify(tt.usernameRepo)
 
 			if (err != nil) != tt.expectedError {
 				t.Errorf("Socialify() error = %v, expectedError %v", err, tt.expectedError)
+			} else if tt.expectedError {
+				t.Logf("Expected error received: %v", err)
+			} else {
+				t.Logf("Successfully executed Socialify for %s", tt.usernameRepo)
 			}
 
 			if !tt.expectedError {
@@ -88,6 +100,8 @@ func TestSocialify(t *testing.T) {
 				}
 				if !bytes.Equal(data, tt.responseBody) {
 					t.Error("Created image content does not match expected data")
+				} else {
+					t.Logf("Image content verified successfully (%d bytes)", len(data))
 				}
 			}
 		})
@@ -95,11 +109,40 @@ func TestSocialify(t *testing.T) {
 }
 
 func TestSocialifyInvalidPath(t *testing.T) {
+	t.Log("Starting TestSocialifyInvalidPath test")
+
+	// Встановлюємо швидкі налаштування для тестів
+	SetRetryConfig(RetryConfig{
+		MaxRetries:    1, // Тільки одна спроба для invalid path тесту
+		RetryInterval: 100 * time.Millisecond,
+	})
+	defer ResetRetryConfig()
+
+	// Очищаємо директорію перед тестом
 	originalDir := "./tmp/gh_project_img"
-	os.RemoveAll(originalDir)
+	if err := os.RemoveAll(originalDir); err != nil {
+		t.Logf("Error removing directory (if exists): %v", err)
+	}
 
 	err := Socialify("test/repo")
+
 	if err == nil {
 		t.Error("Expected error when directory doesn't exist, got nil")
+	} else {
+		t.Logf("Received expected error: %v", err)
+
+		// Перевіряємо тип помилки
+		if os.IsNotExist(err) {
+			t.Log("Confirmed error is 'file not exists' error as expected")
+		} else {
+			t.Logf("Error type: %T", err)
+		}
+	}
+
+	// Перевіряємо, що директорія все ще не існує
+	if _, err := os.Stat(originalDir); !os.IsNotExist(err) {
+		t.Error("Directory should not exist after failed operation")
+	} else {
+		t.Log("Verified directory still doesn't exist after test")
 	}
 }
