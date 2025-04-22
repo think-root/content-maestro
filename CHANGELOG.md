@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/think-root/content-maestro/compare/v1.8.0...v1.8.1) (2025-04-22)
+
+
+### Bug Fixes
+
+* improve socialify URL construction and request handling ([8e2f28b](https://github.com/think-root/content-maestro/commit/8e2f28b4c4588970a923e299e4dfd30ea140df15))
+
 # [1.8.0](https://github.com/think-root/content-maestro/compare/v1.7.0...v1.8.0) (2025-03-31)
 
 
