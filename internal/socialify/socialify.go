@@ -12,15 +12,36 @@ import (
 )
 
 var log = logger.NewLogger()
+var SocialifyHTTPClient = &http.Client{}
+
+// RetryConfig конфігурація для retry механізму
+type RetryConfig struct {
+	MaxRetries    int
+	RetryInterval time.Duration
+}
+
+var defaultConfig = RetryConfig{
+	MaxRetries:    5,
+	RetryInterval: 20 * time.Second,
+}
+
+var currentConfig = defaultConfig
+
+// SetRetryConfig встановлює конфігурацію для retry (корисно для тестів)
+func SetRetryConfig(config RetryConfig) {
+	currentConfig = config
+}
+
+// ResetRetryConfig скидає конфігурацію до значень за замовчуванням
+func ResetRetryConfig() {
+	currentConfig = defaultConfig
+}
 
 func Socialify(usernameRepo string) error {
 	log.Debug("Starting Socialify image parsing")
 
-	maxRetries := 5
-	retryInterval := 20 * time.Second
-
 	var lastErr error
-	for attempt := 1; attempt <= maxRetries; attempt++ {
+	for attempt := 1; attempt <= currentConfig.MaxRetries; attempt++ {
 		err := trySocialify(usernameRepo)
 		if err == nil {
 			log.Debug("Socialify image parsing finished")
@@ -28,13 +49,13 @@ func Socialify(usernameRepo string) error {
 		}
 
 		lastErr = err
-		if attempt < maxRetries {
-			log.Errorf("Attempt %d failed: %v. Retrying in %s...", attempt, err, retryInterval)
-			time.Sleep(retryInterval)
+		if attempt < currentConfig.MaxRetries {
+			log.Errorf("Attempt %d failed: %v. Retrying in %s...", attempt, err, currentConfig.RetryInterval)
+			time.Sleep(currentConfig.RetryInterval)
 		}
 	}
 
-	log.Debugf("All %d attempts failed. Last error: %v", maxRetries, lastErr)
+	log.Debugf("All %d attempts failed. Last error: %v", currentConfig.MaxRetries, lastErr)
 	return lastErr
 }
 
@@ -59,8 +80,7 @@ func trySocialify(usernameRepo string) error {
 	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Content-Maestro/1.0")
 	req.Header.Set("Accept", "image/png")
 
-	client := &http.Client{}
-	response, err := client.Do(req)
+	response, err := SocialifyHTTPClient.Do(req)
 	if err != nil {
 		log.Error(err)
 		return err
