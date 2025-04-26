@@ -11,7 +11,7 @@ import (
 func InitJobs(store *store.Store) models.JobRegistry {
 	return models.JobRegistry{
 		"collect": func(s *gocron.Scheduler) {
-			CollectJob(s, store)
+			CollectJob(s)
 		},
 		"message": MessageJob,
 	}

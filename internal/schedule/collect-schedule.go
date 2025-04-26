@@ -24,8 +24,15 @@ type generateResponse struct {
 	DontAdded []string `json:"dont_added"`
 }
 
-func CollectJob(s *gocron.Scheduler, store *store.Store) {
+func CollectJob(s *gocron.Scheduler) {
 	log.Debug("Collecting posts...")
+
+	store, err := store.NewStore("./data/badger")
+	if err != nil {
+		log.Error("Error connecting to store: %v", err)
+		return
+	}
+	defer store.Close()
 
 	settings, err := store.GetCollectSettings()
 	if err != nil {
@@ -82,14 +89,15 @@ func CollectJob(s *gocron.Scheduler, store *store.Store) {
 }
 
 func CollectCron(store *store.Store) *gocron.Scheduler {
+	s := gocron.NewScheduler(time.UTC)
+
 	setting, err := store.GetCronSetting("collect")
 	if err != nil || setting == nil || !setting.IsActive {
 		log.Debug("Collect cron is disabled")
-		return gocron.NewScheduler(time.UTC)
+		return s
 	}
 
-	s := gocron.NewScheduler(time.UTC)
-	s.Cron(setting.Schedule).Do(CollectJob, s, store)
+	s.Cron(setting.Schedule).Do(CollectJob, s)
 	s.StartAsync()
 	log.Debug("scheduler started successfully")
 	return s
