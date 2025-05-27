@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/think-root/content-maestro/compare/v1.9.0...v1.10.0) (2025-05-27)
+
+
+### Features
+
+* add CronHistory model ([0875e7a](https://github.com/think-root/content-maestro/commit/0875e7a9f36b95c37902bfcc668ae12f134fc19f))
+* add endpoint for retrieving cron history ([1a8c68f](https://github.com/think-root/content-maestro/commit/1a8c68f1a741c802c366d5b120cf0c45a1bdd62f))
+* implement endpoint for retrieving paginated cron history ([34ee602](https://github.com/think-root/content-maestro/commit/34ee602120ff6827bf55d8f357bc3e8a1f68579b))
+* implement LogCronExecution and GetCronHistory methods in store ([0b4ca21](https://github.com/think-root/content-maestro/commit/0b4ca21b55fc7f56af386b71141771a117abb863))
+* log cron execution status for collect job ([cd41d08](https://github.com/think-root/content-maestro/commit/cd41d087a30e898d78d5bbd9f8a72bf25dff5c69))
+* log cron execution status for message job ([29a8c18](https://github.com/think-root/content-maestro/commit/29a8c185a784fefe25500b679c2de83bcb15dc02))
+
 # [1.9.0](https://github.com/think-root/content-maestro/compare/v1.8.1...v1.9.0) (2025-05-27)
 
 
