@@ -171,7 +171,7 @@ Your existing cron settings will be preserved in the Docker deployment, and the 
 
 ## API Reference
 
-The application provides a comprehensive REST API for managing cron jobs, repository collection settings, and cron job history. This API enables you to control scheduled tasks, view and update cron schedules, manage job statuses, configure repository collection parameters, and retrieve cron job execution history.
+The application provides a comprehensive REST API for managing cron jobs, repository collection settings, and cron job history. This API enables you to control scheduled tasks, view and update cron schedules, manage job statuses, configure repository collection parameters, and retrieve cron job execution history with advanced pagination and sorting capabilities.
 
 ### Cron Job History
 
@@ -181,62 +181,91 @@ The application provides a comprehensive REST API for managing cron jobs, reposi
 GET /api/cron-history
 ```
 
-Retrieve the history of cron job executions with pagination and filtering.
+Retrieve the history of cron job executions with pagination, sorting, and filtering.
 
 **Query parameters:**
 
 - `name` (optional): Filter by cron job name (`collect` or `message`)
 - `page` (optional): Page number (default: 1)
-- `pageSize` (optional): Number of records per page (default: 10)
+- `limit` (optional): Number of records per page (default: 20)
+- `sort` (optional): Sort order by execution date (`asc` or `desc`, default: `desc`)
 - `success` (optional): Filter by execution status (`true` or `false`)
+
+**Response format:**
+
+The API returns a paginated response with the following structure:
+
+- `data`: Array of cron history records
+- `pagination`: Pagination metadata object containing:
+  - `total_count`: Total number of records matching the filters
+  - `current_page`: Current page number
+  - `total_pages`: Total number of pages available
+  - `has_next`: Boolean indicating if there's a next page
+  - `has_previous`: Boolean indicating if there's a previous page
 
 **Response example:**
 
 ```json
-[
-  {
-    "name": "collect",
-    "timestamp": "2024-03-15T10:00:00Z",
-    "success": true,
-    "error": ""
-  },
-  {
-    "name": "message",
-    "timestamp": "2024-03-15T10:05:00Z",
-    "success": false,
-    "error": "Network error"
+{
+  "data": [
+    {
+      "name": "collect",
+      "timestamp": "2024-03-15T10:00:00Z",
+      "success": true,
+      "error": ""
+    },
+    {
+      "name": "message",
+      "timestamp": "2024-03-15T10:05:00Z",
+      "success": false,
+      "error": "Network error"
+    }
+  ],
+  "pagination": {
+    "total_count": 25,
+    "current_page": 1,
+    "total_pages": 2,
+    "has_next": true,
+    "has_previous": false
   }
-]
+}
 ```
 
 **Example Usage:**
 
-1. Get all history:
+1. Get all history (default: newest first, 20 records per page):
 
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
   http://localhost:8080/api/cron-history
 ```
 
-2. Get history for specific job:
+2. Get history for specific job with custom pagination:
 
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
-  "http://localhost:8080/api/cron-history?name=collect"
+  "http://localhost:8080/api/cron-history?name=collect&page=1&limit=10"
 ```
 
-3. Get only failed executions with pagination:
+3. Get only failed executions sorted by oldest first:
 
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
-  "http://localhost:8080/api/cron-history?success=false&page=1&pageSize=5"
+  "http://localhost:8080/api/cron-history?success=false&sort=asc&limit=5"
 ```
 
-4. Get message job history with pagination:
+4. Get message job history with pagination and newest first sorting:
 
 ```bash
 curl -H "Authorization: Bearer your_api_token" \
-  "http://localhost:8080/api/cron-history?name=message&page=2&pageSize=20"
+  "http://localhost:8080/api/cron-history?name=message&page=2&limit=15&sort=desc"
+```
+
+5. Get second page of all executions with 10 records per page:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?page=2&limit=10"
 ```
 
 ### Authentication
