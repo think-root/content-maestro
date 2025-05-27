@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/think-root/content-maestro/compare/v1.8.1...v1.9.0) (2025-05-27)
+
+
+### Features
+
+* add LLM configuration to CollectJob for AI-powered descriptions ([ac64b9e](https://github.com/think-root/content-maestro/commit/ac64b9e211721608fbc06148a317c6001f821a3e))
+
 ## [1.8.1](https://github.com/think-root/content-maestro/compare/v1.8.0...v1.8.1) (2025-04-22)
 
 
