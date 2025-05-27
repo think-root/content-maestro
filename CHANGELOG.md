@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/think-root/content-maestro/compare/v1.11.0...v1.12.0) (2025-05-27)
+
+
+### Features
+
+* add date range filtering to cron history API ([c8173b8](https://github.com/think-root/content-maestro/commit/c8173b84a7578ac0f58ca4e2752e0e8edf347bc9))
+
 # [1.11.0](https://github.com/think-root/content-maestro/compare/v1.10.1...v1.11.0) (2025-05-27)
 
 
