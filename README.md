@@ -171,7 +171,46 @@ Your existing cron settings will be preserved in the Docker deployment, and the 
 
 ## API Reference
 
-The application provides a comprehensive REST API for managing both cron jobs and repository collection settings. This API enables you to control scheduled tasks, view and update cron schedules, manage job statuses, and configure repository collection parameters.
+The application provides a comprehensive REST API for managing cron jobs, repository collection settings, and cron job history. This API enables you to control scheduled tasks, view and update cron schedules, manage job statuses, configure repository collection parameters, and retrieve cron job execution history.
+
+### Cron Job History
+
+#### Get Cron Job History
+
+```http
+GET /api/cron-history
+```
+
+Retrieve the history of cron job executions with pagination and filtering.
+
+Query parameters:
+
+- `name` (optional): Filter by cron job name
+- `limit` (optional): Number of records to return (default: 10)
+- `offset` (optional): Number of records to skip (default: 0)
+
+Response example:
+
+```json
+{
+  "total": 50,
+  "history": [
+    {
+      "name": "collect",
+      "timestamp": "2024-03-15T10:00:00Z",
+      "success": true,
+      "error": ""
+    },
+    {
+      "name": "message",
+      "timestamp": "2024-03-15T10:05:00Z",
+      "success": false,
+      "error": "Network error"
+    }
+    // More entries...
+  ]
+}
+```
 
 ### Authentication
 
