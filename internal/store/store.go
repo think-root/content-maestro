@@ -188,14 +188,17 @@ func (s *Store) LogCronExecution(name string, success bool, errorMsg string) err
 	})
 }
 
-func (s *Store) GetCronHistory(name string, success bool, offset, limit int) ([]models.CronHistory, error) {
+func (s *Store) GetCronHistory(name string, success *bool, offset, limit int) ([]models.CronHistory, error) {
 	var history []models.CronHistory
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
-		prefix := []byte("cron_history:" + name)
+		prefix := []byte("cron_history:")
+		if name != "" {
+			prefix = []byte("cron_history:" + name)
+		}
 		count := 0
 
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
@@ -209,11 +212,15 @@ func (s *Store) GetCronHistory(name string, success bool, offset, limit int) ([]
 					if err := json.Unmarshal(val, &hist); err != nil {
 						return err
 					}
-					if name == "" || hist.Name == name {
-						if !success || hist.Success == success {
-							history = append(history, hist)
-						}
+					// Filter by name if specified
+					if name != "" && hist.Name != name {
+						return nil
 					}
+					// Filter by success if specified
+					if success != nil && hist.Success != *success {
+						return nil
+					}
+					history = append(history, hist)
 					return nil
 				})
 				if err != nil {
