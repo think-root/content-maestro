@@ -168,3 +168,66 @@ func (s *Store) InitializeDefaultSettings() error {
 
 	return err
 }
+
+func (s *Store) LogCronExecution(name string, success bool, errorMsg string) error {
+	history := models.CronHistory{
+		Name:      name,
+		Timestamp: time.Now(),
+		Success:   success,
+		Error:     errorMsg,
+	}
+
+	data, err := json.Marshal(history)
+	if err != nil {
+		return fmt.Errorf("failed to marshal cron history: %v", err)
+	}
+
+	return s.db.Update(func(txn *badger.Txn) error {
+		key := []byte("cron_history:" + name + ":" + time.Now().Format(time.RFC3339))
+		return txn.Set(key, data)
+	})
+}
+
+func (s *Store) GetCronHistory(name string, success bool, offset, limit int) ([]models.CronHistory, error) {
+	var history []models.CronHistory
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		prefix := []byte("cron_history:" + name)
+		count := 0
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			if count >= offset+limit {
+				break
+			}
+			if count >= offset {
+				item := it.Item()
+				err := item.Value(func(val []byte) error {
+					var hist models.CronHistory
+					if err := json.Unmarshal(val, &hist); err != nil {
+						return err
+					}
+					if name == "" || hist.Name == name {
+						if !success || hist.Success == success {
+							history = append(history, hist)
+						}
+					}
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			count++
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cron history: %v", err)
+	}
+
+	return history, nil
+}
