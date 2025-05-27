@@ -188,8 +188,9 @@ func (s *Store) LogCronExecution(name string, success bool, errorMsg string) err
 	})
 }
 
-func (s *Store) GetCronHistory(name string, success *bool, offset, limit int) ([]models.CronHistory, error) {
-	var history []models.CronHistory
+// GetCronHistoryCount returns the total count of cron history records matching the filters
+func (s *Store) GetCronHistoryCount(name string, success *bool) (int, error) {
+	count := 0
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -199,35 +200,72 @@ func (s *Store) GetCronHistory(name string, success *bool, offset, limit int) ([
 		if name != "" {
 			prefix = []byte("cron_history:" + name)
 		}
-		count := 0
 
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			if count >= offset+limit {
-				break
-			}
-			if count >= offset {
-				item := it.Item()
-				err := item.Value(func(val []byte) error {
-					var hist models.CronHistory
-					if err := json.Unmarshal(val, &hist); err != nil {
-						return err
-					}
-					// Filter by name if specified
-					if name != "" && hist.Name != name {
-						return nil
-					}
-					// Filter by success if specified
-					if success != nil && hist.Success != *success {
-						return nil
-					}
-					history = append(history, hist)
-					return nil
-				})
-				if err != nil {
+			item := it.Item()
+			err := item.Value(func(val []byte) error {
+				var hist models.CronHistory
+				if err := json.Unmarshal(val, &hist); err != nil {
 					return err
 				}
+				// Filter by name if specified
+				if name != "" && hist.Name != name {
+					return nil
+				}
+				// Filter by success if specified
+				if success != nil && hist.Success != *success {
+					return nil
+				}
+				count++
+				return nil
+			})
+			if err != nil {
+				return err
 			}
-			count++
+		}
+		return nil
+	})
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to count cron history: %v", err)
+	}
+
+	return count, nil
+}
+
+func (s *Store) GetCronHistory(name string, success *bool, offset, limit int, sortOrder string) ([]models.CronHistory, error) {
+	var allHistory []models.CronHistory
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		prefix := []byte("cron_history:")
+		if name != "" {
+			prefix = []byte("cron_history:" + name)
+		}
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			item := it.Item()
+			err := item.Value(func(val []byte) error {
+				var hist models.CronHistory
+				if err := json.Unmarshal(val, &hist); err != nil {
+					return err
+				}
+				// Filter by name if specified
+				if name != "" && hist.Name != name {
+					return nil
+				}
+				// Filter by success if specified
+				if success != nil && hist.Success != *success {
+					return nil
+				}
+				allHistory = append(allHistory, hist)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -236,5 +274,36 @@ func (s *Store) GetCronHistory(name string, success *bool, offset, limit int) ([
 		return nil, fmt.Errorf("failed to get cron history: %v", err)
 	}
 
-	return history, nil
+	// Sort by timestamp using sort package
+	if sortOrder == "asc" {
+		// Sort ascending (oldest first)
+		for i := 0; i < len(allHistory); i++ {
+			for j := i + 1; j < len(allHistory); j++ {
+				if allHistory[i].Timestamp.After(allHistory[j].Timestamp) {
+					allHistory[i], allHistory[j] = allHistory[j], allHistory[i]
+				}
+			}
+		}
+	} else {
+		// Sort descending (newest first) - default
+		for i := 0; i < len(allHistory); i++ {
+			for j := i + 1; j < len(allHistory); j++ {
+				if allHistory[i].Timestamp.Before(allHistory[j].Timestamp) {
+					allHistory[i], allHistory[j] = allHistory[j], allHistory[i]
+				}
+			}
+		}
+	}
+
+	// Apply pagination
+	start := offset
+	end := offset + limit
+	if start >= len(allHistory) {
+		return []models.CronHistory{}, nil
+	}
+	if end > len(allHistory) {
+		end = len(allHistory)
+	}
+
+	return allHistory[start:end], nil
 }
