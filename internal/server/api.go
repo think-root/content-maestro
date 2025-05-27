@@ -221,20 +221,28 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 
 	cronName := r.URL.Query().Get("name")
 	pageStr := r.URL.Query().Get("page")
-	pageSizeStr := r.URL.Query().Get("pageSize")
+	limitStr := r.URL.Query().Get("limit")
 	successStr := r.URL.Query().Get("success")
+	sortOrder := r.URL.Query().Get("sort")
 
+	// Parse page parameter (default: 1)
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
-		page = 1 // Default page
+		page = 1
 	}
 
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize <= 0 {
-		pageSize = 10 // Default page size
+	// Parse limit parameter (default: 20)
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 20
 	}
 
-	offset := (page - 1) * pageSize
+	// Parse sort parameter (default: "desc")
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+
+	offset := (page - 1) * limit
 
 	var success *bool
 	if successStr != "" {
@@ -246,12 +254,39 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 		success = &successVal
 	}
 
-	history, err := api.store.GetCronHistory(cronName, success, offset, pageSize)
+	// Get total count for pagination metadata
+	totalCount, err := api.store.GetCronHistoryCount(cronName, success)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Get paginated and sorted history
+	history, err := api.store.GetCronHistory(cronName, success, offset, limit, sortOrder)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Calculate pagination metadata
+	totalPages := (totalCount + limit - 1) / limit // Ceiling division
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	pagination := models.PaginationMetadata{
+		TotalCount:  totalCount,
+		CurrentPage: page,
+		TotalPages:  totalPages,
+		HasNext:     page < totalPages,
+		HasPrevious: page > 1,
+	}
+
+	response := models.PaginatedCronHistoryResponse{
+		Data:       history,
+		Pagination: pagination,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(history)
+	json.NewEncoder(w).Encode(response)
 }
