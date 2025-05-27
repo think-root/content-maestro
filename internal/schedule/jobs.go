@@ -13,7 +13,9 @@ func InitJobs(store *store.Store) models.JobRegistry {
 		"collect": func(s *gocron.Scheduler) {
 			CollectJob(s, store)
 		},
-		"message": MessageJob,
+		"message": func(s *gocron.Scheduler) {
+			MessageJob(s, store)
+		},
 	}
 }
 
