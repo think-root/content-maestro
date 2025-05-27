@@ -189,7 +189,7 @@ func (s *Store) LogCronExecution(name string, success bool, errorMsg string) err
 }
 
 // GetCronHistoryCount returns the total count of cron history records matching the filters
-func (s *Store) GetCronHistoryCount(name string, success *bool) (int, error) {
+func (s *Store) GetCronHistoryCount(name string, success *bool, startDate, endDate *time.Time) (int, error) {
 	count := 0
 
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -216,6 +216,13 @@ func (s *Store) GetCronHistoryCount(name string, success *bool) (int, error) {
 				if success != nil && hist.Success != *success {
 					return nil
 				}
+				// Filter by date range if specified
+				if startDate != nil && hist.Timestamp.Before(*startDate) {
+					return nil
+				}
+				if endDate != nil && hist.Timestamp.After(endDate.Add(24*time.Hour-time.Nanosecond)) {
+					return nil
+				}
 				count++
 				return nil
 			})
@@ -233,7 +240,7 @@ func (s *Store) GetCronHistoryCount(name string, success *bool) (int, error) {
 	return count, nil
 }
 
-func (s *Store) GetCronHistory(name string, success *bool, offset, limit int, sortOrder string) ([]models.CronHistory, error) {
+func (s *Store) GetCronHistory(name string, success *bool, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error) {
 	var allHistory []models.CronHistory
 
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -258,6 +265,13 @@ func (s *Store) GetCronHistory(name string, success *bool, offset, limit int, so
 				}
 				// Filter by success if specified
 				if success != nil && hist.Success != *success {
+					return nil
+				}
+				// Filter by date range if specified
+				if startDate != nil && hist.Timestamp.Before(*startDate) {
+					return nil
+				}
+				if endDate != nil && hist.Timestamp.After(endDate.Add(24*time.Hour-time.Nanosecond)) {
 					return nil
 				}
 				allHistory = append(allHistory, hist)

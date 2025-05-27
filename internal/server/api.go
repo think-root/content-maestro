@@ -224,6 +224,8 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	successStr := r.URL.Query().Get("success")
 	sortOrder := r.URL.Query().Get("sort")
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
 
 	// Parse page parameter (default: 1)
 	page, err := strconv.Atoi(pageStr)
@@ -254,15 +256,22 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 		success = &successVal
 	}
 
+	// Parse date range parameters
+	startDate, endDate, err := validation.ParseDateRange(startDateStr, endDateStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Get total count for pagination metadata
-	totalCount, err := api.store.GetCronHistoryCount(cronName, success)
+	totalCount, err := api.store.GetCronHistoryCount(cronName, success, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Get paginated and sorted history
-	history, err := api.store.GetCronHistory(cronName, success, offset, limit, sortOrder)
+	history, err := api.store.GetCronHistory(cronName, success, offset, limit, sortOrder, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
