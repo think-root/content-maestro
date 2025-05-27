@@ -6,6 +6,7 @@ import (
 	"content-maestro/internal/validation"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-co-op/gocron"
@@ -210,4 +211,42 @@ func (api *CronAPI) GetCollectSettings(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(settings)
+}
+
+func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cronName := r.URL.Query().Get("name")
+	pageStr := r.URL.Query().Get("page")
+	pageSizeStr := r.URL.Query().Get("pageSize")
+	successStr := r.URL.Query().Get("success")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1 // Default page
+	}
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize <= 0 {
+		pageSize = 10 // Default page size
+	}
+
+	offset := (page - 1) * pageSize
+
+	success, err := strconv.ParseBool(successStr)
+	if err != nil {
+		success = false // Default to all
+	}
+
+	history, err := api.store.GetCronHistory(cronName, success, offset, pageSize)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
 }
