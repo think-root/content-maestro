@@ -236,9 +236,14 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 
 	offset := (page - 1) * pageSize
 
-	success, err := strconv.ParseBool(successStr)
-	if err != nil {
-		success = false // Default to all
+	var success *bool
+	if successStr != "" {
+		successVal, err := strconv.ParseBool(successStr)
+		if err != nil {
+			http.Error(w, "Invalid success parameter", http.StatusBadRequest)
+			return
+		}
+		success = &successVal
 	}
 
 	history, err := api.store.GetCronHistory(cronName, success, offset, pageSize)
