@@ -190,6 +190,8 @@ Retrieve the history of cron job executions with pagination, sorting, and filter
 - `limit` (optional): Number of records per page (default: 20)
 - `sort` (optional): Sort order by execution date (`asc` or `desc`, default: `desc`)
 - `success` (optional): Filter by execution status (`true` or `false`)
+- `start_date` (optional): Filter records from this date onwards (format: `YYYY-MM-DD` or RFC3339)
+- `end_date` (optional): Filter records up to this date (format: `YYYY-MM-DD` or RFC3339)
 
 **Response format:**
 
@@ -267,6 +269,50 @@ curl -H "Authorization: Bearer your_api_token" \
 curl -H "Authorization: Bearer your_api_token" \
   "http://localhost:8080/api/cron-history?page=2&limit=10"
 ```
+
+6. Get history for a specific date range (from March 1st to March 15th, 2024):
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?start_date=2024-03-01&end_date=2024-03-15"
+```
+
+7. Get failed executions from the last week:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?success=false&start_date=2024-03-08"
+```
+
+8. Get collect job history for a specific date with precise timestamps:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?name=collect&start_date=2024-03-15T00:00:00Z&end_date=2024-03-15T23:59:59Z"
+```
+
+9. Get recent executions from the last 3 days, sorted oldest first:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?start_date=2024-03-12&sort=asc"
+```
+
+**Date Range Filtering Notes:**
+
+- **Supported date formats:**
+  - Date only: `YYYY-MM-DD` (e.g., `2024-03-15`)
+  - RFC3339 with timezone: `YYYY-MM-DDTHH:MM:SSZ` (e.g., `2024-03-15T10:30:00Z`)
+- **Date validation:**
+  - Invalid date formats will return a `400 Bad Request` error
+  - If `start_date` is after `end_date`, the API will return a `400 Bad Request` error
+- **Date range behavior:**
+  - `start_date` is inclusive (records from this date onwards)
+  - `end_date` is inclusive (records up to the end of this date)
+  - When using date-only format, `end_date` includes the entire day (until 23:59:59.999...)
+- **Timezone handling:**
+  - All timestamps are stored and compared in UTC
+  - When using date-only format, the date is interpreted as the start of the day in UTC
 
 ### Authentication
 
