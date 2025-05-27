@@ -1,3 +1,11 @@
+## [1.10.1](https://github.com/think-root/content-maestro/compare/v1.10.0...v1.10.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* allow nil success parameter in GetCronHistory for unfiltered results ([06257c0](https://github.com/think-root/content-maestro/commit/06257c0c833fb81b4f442b99912b0839389d2f4f))
+* handle empty success parameter in GetCronHistory ([143765a](https://github.com/think-root/content-maestro/commit/143765ac6c28d48647bbb7bfb6fbbd42c665e6e1))
+
 # [1.10.0](https://github.com/think-root/content-maestro/compare/v1.9.0...v1.10.0) (2025-05-27)
 
 
