@@ -183,33 +183,60 @@ GET /api/cron-history
 
 Retrieve the history of cron job executions with pagination and filtering.
 
-Query parameters:
+**Query parameters:**
 
-- `name` (optional): Filter by cron job name
-- `limit` (optional): Number of records to return (default: 10)
-- `offset` (optional): Number of records to skip (default: 0)
+- `name` (optional): Filter by cron job name (`collect` or `message`)
+- `page` (optional): Page number (default: 1)
+- `pageSize` (optional): Number of records per page (default: 10)
+- `success` (optional): Filter by execution status (`true` or `false`)
 
-Response example:
+**Response example:**
 
 ```json
-{
-  "total": 50,
-  "history": [
-    {
-      "name": "collect",
-      "timestamp": "2024-03-15T10:00:00Z",
-      "success": true,
-      "error": ""
-    },
-    {
-      "name": "message",
-      "timestamp": "2024-03-15T10:05:00Z",
-      "success": false,
-      "error": "Network error"
-    }
-    // More entries...
-  ]
-}
+[
+  {
+    "name": "collect",
+    "timestamp": "2024-03-15T10:00:00Z",
+    "success": true,
+    "error": ""
+  },
+  {
+    "name": "message",
+    "timestamp": "2024-03-15T10:05:00Z",
+    "success": false,
+    "error": "Network error"
+  }
+]
+```
+
+**Example Usage:**
+
+1. Get all history:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  http://localhost:8080/api/cron-history
+```
+
+2. Get history for specific job:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?name=collect"
+```
+
+3. Get only failed executions with pagination:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?success=false&page=1&pageSize=5"
+```
+
+4. Get message job history with pagination:
+
+```bash
+curl -H "Authorization: Bearer your_api_token" \
+  "http://localhost:8080/api/cron-history?name=message&page=2&pageSize=20"
 ```
 
 ### Authentication
