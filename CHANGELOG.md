@@ -1,3 +1,12 @@
+# [1.11.0](https://github.com/think-root/content-maestro/compare/v1.10.1...v1.11.0) (2025-05-27)
+
+
+### Features
+
+* add GetCronHistoryCount to improve cron history pagination ([3b9b027](https://github.com/think-root/content-maestro/commit/3b9b027e5d9244d9432f8c5d3b1017b688221438))
+* add pagination metadata to cron history response ([f5e5787](https://github.com/think-root/content-maestro/commit/f5e5787e0f37e5d4b16d58ce41359ef0fca4c223))
+* implement pagination and sorting for cron history API ([6d75855](https://github.com/think-root/content-maestro/commit/6d758552a3c123a9cf6ff3889e2dbda957321e1f))
+
 ## [1.10.1](https://github.com/think-root/content-maestro/compare/v1.10.0...v1.10.1) (2025-05-27)
 
 
