@@ -1,3 +1,12 @@
+# [1.13.0](https://github.com/think-root/content-maestro/compare/v1.12.0...v1.13.0) (2025-05-29)
+
+
+### Features
+
+* enhance cron job logging with success messages ([2396802](https://github.com/think-root/content-maestro/commit/2396802048dac892ffae5d65d657c452802f9d49))
+* simplify cron history logging ([663ae90](https://github.com/think-root/content-maestro/commit/663ae9043b3188115c0e3b4aa3c26c9e4c03b19d))
+* update GPT model to gpt-4o-mini-search-preview ([1b39acf](https://github.com/think-root/content-maestro/commit/1b39acff9841a359e6de37a059a5fe4f29b6980a))
+
 # [1.12.0](https://github.com/think-root/content-maestro/compare/v1.11.0...v1.12.0) (2025-05-27)
 
 
