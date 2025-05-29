@@ -214,13 +214,13 @@ The API returns a paginated response with the following structure:
       "name": "collect",
       "timestamp": "2024-03-15T10:00:00Z",
       "success": true,
-      "error": ""
+      "output": "Successfully collected 5 repositories"
     },
     {
       "name": "message",
       "timestamp": "2024-03-15T10:05:00Z",
       "success": false,
-      "error": "Network error"
+      "output": "Network error"
     }
   ],
   "pagination": {
