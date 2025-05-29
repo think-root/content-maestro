@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"content-maestro/internal/store"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -40,7 +41,7 @@ func CollectJob(s *gocron.Scheduler, store *store.Store) {
 	settings, err := store.GetCollectSettings()
 	if err != nil {
 		log.Error("Error getting collect settings: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 
@@ -75,14 +76,14 @@ func CollectJob(s *gocron.Scheduler, store *store.Store) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("Error marshaling request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 
 	req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error("Error creating request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 
@@ -95,7 +96,7 @@ func CollectJob(s *gocron.Scheduler, store *store.Store) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Error sending request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 	defer resp.Body.Close()
@@ -103,22 +104,23 @@ func CollectJob(s *gocron.Scheduler, store *store.Store) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Error reading response: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 
 	var response generateResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		log.Error("Error unmarshaling response: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		store.LogCronExecution("collect", false, err.Error(), "")
 		return
 	}
 
 	if response.Status == "ok" {
 		log.Debugf("Successfully collected %d new repositories", len(response.Added))
-		store.LogCronExecution("collect", true, "")
+		msg := fmt.Sprintf("Collected repos: %d", len(response.Added))
+		store.LogCronExecution("collect", true, "", msg)
 	} else {
-		store.LogCronExecution("collect", false, "API returned non-ok status")
+		store.LogCronExecution("collect", false, "API returned non-ok status", "")
 	}
 }
 

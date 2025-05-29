@@ -7,6 +7,7 @@ import (
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
 	"content-maestro/internal/utils"
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,13 +22,13 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 	repo, err := repository.GetRepository(1, false, "ASC", "date_added")
 	if err != nil {
 		log.Error("Error getting repository: %v", err)
-		store.LogCronExecution("message", false, err.Error())
+		store.LogCronExecution("message", false, err.Error(), "")
 		return
 	}
 
 	if len(repo.Data.Items) == 0 {
 		log.Debug("No items found in repository")
-		store.LogCronExecution("message", false, "No items found in repository")
+		store.LogCronExecution("message", false, "No items found in repository", "")
 		return
 	}
 
@@ -41,7 +42,7 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 		err := utils.CopyFile("./assets/banner.jpg", image_name)
 		if err != nil {
 			log.Error("Failed to copy file: %v", err)
-			store.LogCronExecution("message", false, err.Error())
+			store.LogCronExecution("message", false, err.Error(), "")
 			return
 		}
 	}
@@ -49,8 +50,11 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 	err = api.LoadAPIConfigs("./internal/api/apis-config.yml")
 	if err != nil {
 		log.Error("Failed to load API configurations: %v", err)
-		store.LogCronExecution("message", false, err.Error())
+		store.LogCronExecution("message", false, err.Error(), "")
+		return
 	}
+
+	var successfulAPIs []string
 
 	for apiName, endpoint := range api.GetAPIConfigs().APIs {
 		if !endpoint.Enabled {
@@ -88,25 +92,29 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 		resp, err := api.ExecuteRequest(req)
 		if err != nil {
 			log.Errorf("%s API error: %v", apiName, err)
+			store.LogCronExecution("message", false, err.Error(), "")
+			return
 		} else if resp.Success {
 			log.Debugf("%s post created successfully!", apiName)
+			successfulAPIs = append(successfulAPIs, apiName)
 		}
 	}
 
 	if _, err := repository.UpdateRepositoryPosted(item.URL, true); err != nil {
 		log.Error("Error updating repository posted status: %v", err)
-		store.LogCronExecution("message", false, err.Error())
+		store.LogCronExecution("message", false, err.Error(), "")
 		return
 	}
 
 	err = utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
 	if err != nil {
 		log.Error(err)
-		store.LogCronExecution("message", false, err.Error())
+		store.LogCronExecution("message", false, err.Error(), "")
 		return
 	}
 
-	store.LogCronExecution("message", true, "")
+	msg := fmt.Sprintf("Messages sent to: %s", strings.Join(successfulAPIs, ", "))
+	store.LogCronExecution("message", true, "", msg)
 }
 
 func MessageCron(store *store.Store) *gocron.Scheduler {

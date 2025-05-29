@@ -7,6 +7,7 @@ type CronHistory struct {
 	Timestamp time.Time `json:"timestamp"`
 	Success   bool      `json:"success"`
 	Error     string    `json:"error,omitempty"`
+	Message   string    `json:"message,omitempty"`
 }
 
 type PaginationMetadata struct {

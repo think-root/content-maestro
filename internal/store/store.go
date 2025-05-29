@@ -169,12 +169,13 @@ func (s *Store) InitializeDefaultSettings() error {
 	return err
 }
 
-func (s *Store) LogCronExecution(name string, success bool, errorMsg string) error {
+func (s *Store) LogCronExecution(name string, success bool, errorMsg string, message string) error {
 	history := models.CronHistory{
 		Name:      name,
 		Timestamp: time.Now(),
 		Success:   success,
 		Error:     errorMsg,
+		Message:   message,
 	}
 
 	data, err := json.Marshal(history)
