@@ -113,7 +113,7 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 		return
 	}
 
-	msg := fmt.Sprintf("Messages sent to: %s", strings.Join(successfulAPIs, ", "))
+	msg := fmt.Sprintf("Message sent to: %s", strings.Join(successfulAPIs, ", "))
 	store.LogCronExecution("message", true, msg)
 }
 
