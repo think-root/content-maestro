@@ -465,14 +465,14 @@ curl -X PUT \
   http://localhost:8080/api/crons/collect/schedule
 ```
 
-3. Disable message cron:
+3. Enable collect cron:
 
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer your_api_token" \
   -H "Content-Type: application/json" \
-  -d '{"is_active": false}' \
-  http://localhost:8080/api/crons/message/status
+  -d '{"is_active": true}' \
+  http://localhost:8080/api/crons/collect/status
 ```
 
 4. Get collect settings:
@@ -493,7 +493,7 @@ curl -X PUT \
     "since": "weekly",
     "spoken_language_code": "uk"
   }' \
-  http://localhost:8080/api/collect-settings
+  http://localhost:8080/api/collect-settings/update
 ```
 
 ### Data Persistence
