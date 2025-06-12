@@ -41,17 +41,6 @@ func main() {
 	pgPassword := os.Getenv("POSTGRES_PASSWORD")
 	pgDBName := os.Getenv("POSTGRES_DB")
 
-	log.Debug("PostgreSQL configuration:")
-	log.Debugf("POSTGRES_HOST: %s", pgHost)
-	log.Debugf("POSTGRES_PORT: %s", pgPort)
-	log.Debugf("POSTGRES_USER: %s", pgUser)
-	passwordStatus := "[EMPTY]"
-	if pgPassword != "" {
-		passwordStatus = "[SET]"
-	}
-	log.Debugf("POSTGRES_PASSWORD: %s", passwordStatus)
-	log.Debugf("POSTGRES_DB: %s", pgDBName)
-
 	if pgHost == "" || pgPort == "" || pgUser == "" || pgDBName == "" {
 		log.Error("PostgreSQL environment variables are missing:")
 		if pgHost == "" { log.Error("- POSTGRES_HOST is empty") }
@@ -62,7 +51,6 @@ func main() {
 		return
 	}
 
-	log.Debugf("Initializing PostgreSQL store with connection string: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
 	log.Debugf("Attempting to connect to PostgreSQL...")
 	pgStore, err := store.NewPostgresStore(pgHost, pgPort, pgUser, pgPassword, pgDBName)
 	if err != nil {
