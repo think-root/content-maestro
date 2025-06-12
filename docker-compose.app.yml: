@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  content-maestro:
+    image: content-maestro:latest
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION}
+    env_file:
+      - .env
+    ports:
+      - "${API_PORT:-8080}:${API_PORT:-8080}"
+    networks:
+      - think-root-network
+    depends_on:
+      think-root-db:
+        condition: service_healthy
+
+networks:
+  think-root-network:
+    external: true
