@@ -2,7 +2,7 @@ services:
   think-root-db:
     container_name: think-root-db
     restart: always
-    image: postgres:16
+    image: postgres:17
     env_file:
       - .env
     environment:
