@@ -119,7 +119,7 @@ func (s *PostgresStore) GetCronSetting(name string) (*models.CronSetting, error)
 
 func (s *PostgresStore) GetAllCronSettings() ([]models.CronSetting, error) {
 	var settings []models.CronSetting
-	query := "SELECT name, schedule, is_active, updated_at FROM maestro_cron_settings"
+	query := "SELECT name, schedule, is_active, updated_at FROM maestro_cron_settings ORDER BY id ASC"
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all cron settings: %v", err)
