@@ -3,12 +3,10 @@ services:
     container_name: think-root-db
     restart: always
     image: postgres:16-alpine
-    env_file:
-      - .env
     environment:
-      - POSTGRES_DB
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${POSTGRES_EXTERNAL_PORT:-5433}:5432"
     volumes:
