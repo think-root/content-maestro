@@ -4,7 +4,7 @@ services:
     restart: always
     image: postgres:16
     env_file:
-      - .env.prod
+      - .env
     environment:
       - POSTGRES_DB=think-root-db
     ports:
