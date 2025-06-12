@@ -1,6 +1,6 @@
 services:
   think-root-db:
-    ontainer_name: think-root-db
+    container_name: think-root-db
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
