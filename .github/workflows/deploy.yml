@@ -91,7 +91,7 @@ jobs:
 
             if docker inspect content-maestro >/dev/null 2>&1; then
               echo "Stopping and removing existing container..."
-              docker compose down --rmi all
+              docker compose down --rmi all --volumes
             fi
 
             docker compose up -d
