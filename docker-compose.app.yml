@@ -1,5 +1,6 @@
 services:
   content-maestro:
+    container_name: content-maestro
     image: content-maestro:latest
     build:
       context: .
