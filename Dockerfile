@@ -25,3 +25,4 @@ USER nobody
 EXPOSE 8080
 
 CMD ["./content-maestro"]
+
