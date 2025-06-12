@@ -51,8 +51,13 @@ create a **.env** file in the app root directory
 | WAPP_SERVER_URL          | The URL of the WhatsApp integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_URL      | The URL of the Telegram integration server, e.g., http://localhost:8080                                   |
 | TELEGRAM_SERVER_TOKEN    | Your API key for integration with [Telegram](https://github.com/think-root/telegram-connector)            |
-| API_TOKEN                | Authentication token for the API server                             |
-| API_PORT                 | Port for the API server (default: 8080)                                                   |
+| API_TOKEN                | Authentication token for the API server                                                                   |
+| API_PORT                 | Port for the API server (default: 8080)                                                                   |
+| POSTGRES_HOST            | PostgreSQL database host (default: my-db)                                                                 |
+| POSTGRES_PORT            | PostgreSQL database port (default: 5432)                                                                  |
+| POSTGRES_USER            | PostgreSQL database username                                                                               |
+| POSTGRES_PASSWORD        | PostgreSQL database password                                                                               |
+| POSTGRES_DB              | PostgreSQL database name                                                                                   |
 
 > [!WARNING]
 > WhatsApp integration is unofficial and may risk account suspension
