@@ -1,40 +1,29 @@
 package store
 
-import (
-	"encoding/json"
-
-	"github.com/dgraph-io/badger/v3"
-)
-
 type CollectSettings struct {
 	MaxRepos           int    `json:"max_repos"`
 	Since              string `json:"since"`
 	SpokenLanguageCode string `json:"spoken_language_code"`
 }
 
-func (s *Store) GetCollectSettings() (*CollectSettings, error) {
+func (s *PostgresStore) GetCollectSettings() (*CollectSettings, error) {
 	var settings CollectSettings
-	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte("collect_settings"))
-		if err != nil {
-			return err
-		}
-		return item.Value(func(val []byte) error {
-			return json.Unmarshal(val, &settings)
-		})
-	})
+	err := s.db.QueryRow(`
+		SELECT max_repos, since, spoken_language_code
+		FROM maestro_collect_settings
+		WHERE id = 1
+	`).Scan(&settings.MaxRepos, &settings.Since, &settings.SpokenLanguageCode)
 	if err != nil {
 		return nil, err
 	}
 	return &settings, nil
 }
 
-func (s *Store) UpdateCollectSettings(settings *CollectSettings) error {
-	return s.db.Update(func(txn *badger.Txn) error {
-		data, err := json.Marshal(settings)
-		if err != nil {
-			return err
-		}
-		return txn.Set([]byte("collect_settings"), data)
-	})
+func (s *PostgresStore) UpdateCollectSettings(settings *CollectSettings) error {
+	_, err := s.db.Exec(`
+		UPDATE maestro_collect_settings
+		SET max_repos = $1, since = $2, spoken_language_code = $3
+		WHERE id = 1
+	`, settings.MaxRepos, settings.Since, settings.SpokenLanguageCode)
+	return err
 }
