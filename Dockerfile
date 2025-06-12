@@ -12,7 +12,6 @@ WORKDIR /app
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION}
 COPY --from=builder /app/content-maestro .
-COPY .env /app/.env
 COPY assets/ /app/assets/
 COPY internal/api/apis-config.yml /app/internal/api/apis-config.yml
 
