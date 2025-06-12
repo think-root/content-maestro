@@ -14,7 +14,6 @@ import (
 var log = logger.NewLogger()
 var SocialifyHTTPClient = &http.Client{}
 
-// RetryConfig конфігурація для retry механізму
 type RetryConfig struct {
 	MaxRetries    int
 	RetryInterval time.Duration
@@ -27,12 +26,10 @@ var defaultConfig = RetryConfig{
 
 var currentConfig = defaultConfig
 
-// SetRetryConfig встановлює конфігурацію для retry (корисно для тестів)
 func SetRetryConfig(config RetryConfig) {
 	currentConfig = config
 }
 
-// ResetRetryConfig скидає конфігурацію до значень за замовчуванням
 func ResetRetryConfig() {
 	currentConfig = defaultConfig
 }

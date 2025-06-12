@@ -99,7 +99,6 @@ func TestParseDateRange(t *testing.T) {
 				return
 			}
 
-			// Verify that dates are parsed correctly when provided
 			if tt.startDate != "" && startDate == nil {
 				t.Errorf("expected start date to be parsed, got nil")
 			}
@@ -117,10 +116,8 @@ func TestParseDateRange(t *testing.T) {
 }
 
 func TestIsWithinDateRange(t *testing.T) {
-	// Test timestamp
 	testTime := time.Date(2024, 3, 10, 12, 0, 0, 0, time.UTC)
-	
-	// Date range boundaries
+
 	startDate := time.Date(2024, 3, 5, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
 

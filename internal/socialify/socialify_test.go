@@ -10,7 +10,6 @@ import (
 )
 
 func setupTestEnvironment(t *testing.T) func() {
-	// Встановлюємо швидкі налаштування для тестів
 	SetRetryConfig(RetryConfig{
 		MaxRetries:    2,
 		RetryInterval: 100 * time.Millisecond,
@@ -111,14 +110,12 @@ func TestSocialify(t *testing.T) {
 func TestSocialifyInvalidPath(t *testing.T) {
 	t.Log("Starting TestSocialifyInvalidPath test")
 
-	// Встановлюємо швидкі налаштування для тестів
 	SetRetryConfig(RetryConfig{
-		MaxRetries:    1, // Тільки одна спроба для invalid path тесту
+		MaxRetries:    1,
 		RetryInterval: 100 * time.Millisecond,
 	})
 	defer ResetRetryConfig()
 
-	// Очищаємо директорію перед тестом
 	originalDir := "./tmp/gh_project_img"
 	if err := os.RemoveAll(originalDir); err != nil {
 		t.Logf("Error removing directory (if exists): %v", err)
@@ -131,7 +128,6 @@ func TestSocialifyInvalidPath(t *testing.T) {
 	} else {
 		t.Logf("Received expected error: %v", err)
 
-		// Перевіряємо тип помилки
 		if os.IsNotExist(err) {
 			t.Log("Confirmed error is 'file not exists' error as expected")
 		} else {
@@ -139,7 +135,6 @@ func TestSocialifyInvalidPath(t *testing.T) {
 		}
 	}
 
-	// Перевіряємо, що директорія все ще не існує
 	if _, err := os.Stat(originalDir); !os.IsNotExist(err) {
 		t.Error("Directory should not exist after failed operation")
 	} else {
