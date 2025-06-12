@@ -13,12 +13,12 @@ import (
 )
 
 type CronAPI struct {
-	store      *store.Store
+	store      store.StoreInterface
 	schedulers map[string]*gocron.Scheduler
 	jobs       models.JobRegistry
 }
 
-func NewCronAPI(store *store.Store, schedulers map[string]*gocron.Scheduler, jobs models.JobRegistry) *CronAPI {
+func NewCronAPI(store store.StoreInterface, schedulers map[string]*gocron.Scheduler, jobs models.JobRegistry) *CronAPI {
 	return &CronAPI{
 		store:      store,
 		schedulers: schedulers,
@@ -227,19 +227,16 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 	startDateStr := r.URL.Query().Get("start_date")
 	endDateStr := r.URL.Query().Get("end_date")
 
-	// Parse page parameter (default: 1)
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
 		page = 1
 	}
 
-	// Parse limit parameter (default: 20)
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
 		limit = 20
 	}
 
-	// Parse sort parameter (default: "desc")
 	if sortOrder != "asc" && sortOrder != "desc" {
 		sortOrder = "desc"
 	}
@@ -256,29 +253,25 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 		success = &successVal
 	}
 
-	// Parse date range parameters
 	startDate, endDate, err := validation.ParseDateRange(startDateStr, endDateStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Get total count for pagination metadata
 	totalCount, err := api.store.GetCronHistoryCount(cronName, success, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Get paginated and sorted history
 	history, err := api.store.GetCronHistory(cronName, success, offset, limit, sortOrder, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Calculate pagination metadata
-	totalPages := (totalCount + limit - 1) / limit // Ceiling division
+	totalPages := (totalCount + limit - 1) / limit
 	if totalPages == 0 {
 		totalPages = 1
 	}
