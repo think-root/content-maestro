@@ -50,4 +50,4 @@ volumes:
 
 networks:
   think-root-network:
-    name: think-root-network
+    driver: bridge
