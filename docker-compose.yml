@@ -31,14 +31,6 @@ services:
         APP_VERSION: ${APP_VERSION}
     env_file:
       - .env
-    environment:
-      - TZ=Europe/Kiev
-      - APP_VERSION=${APP_VERSION}
-      - POSTGRES_HOST=think-root-db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=think-root-db
     ports:
       - "${API_PORT:-8080}:${API_PORT:-8080}"
     volumes:
