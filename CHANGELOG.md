@@ -1,3 +1,40 @@
+# [2.0.0](https://github.com/think-root/content-maestro/compare/v1.13.0...v2.0.0) (2025-06-12)
+
+
+### Bug Fixes
+
+* correct grammar in message cron job log ([2297cf0](https://github.com/think-root/content-maestro/commit/2297cf0fe9ea6eb4c70e8b46ba31cb9aba7e9944))
+* **db:** update PostgreSQL port configuration in docker-compose ([d7dc348](https://github.com/think-root/content-maestro/commit/d7dc348f15f980a6d69113f0ed0515865704361b))
+* **docker:** downgrade PostgreSQL image to 16-alpine ([7d151f8](https://github.com/think-root/content-maestro/commit/7d151f852c361c8ea782e33018e832f9f1a0ccb1))
+* **docker:** ensure .env file is copied to the runtime image ([1945396](https://github.com/think-root/content-maestro/commit/1945396902fa2438b0061b32bd41ff55bf31661e))
+* **docker:** remove volumes option from docker compose down command ([48a3d07](https://github.com/think-root/content-maestro/commit/48a3d0728e647ec8c41c0d6e401b2918bd9499d6))
+* **docker:** update deployment script to remove volumes during container teardown ([2639119](https://github.com/think-root/content-maestro/commit/263911905e8000ccc9d9f8fb623e636a2821185b))
+* **docker:** update env_file to use .env for content-maestro service ([f331c1d](https://github.com/think-root/content-maestro/commit/f331c1d26c19708196c0dfb7a90ba944a5c0d1ab))
+* **docker:** update env_file to use .env for PostgreSQL service ([11e6d71](https://github.com/think-root/content-maestro/commit/11e6d714119b913392a7e5d91ea78f7f178d90b2))
+* **docker:** update healthcheck command to use environment variables for user and database ([f9a4d3f](https://github.com/think-root/content-maestro/commit/f9a4d3fbf260af57e01cb8c0743c829146f15354))
+* **docker:** update network configuration to use external network ([6224b1a](https://github.com/think-root/content-maestro/commit/6224b1a88010f62128553e34be09f0a646929f5c))
+* **docker:** update PostgreSQL environment variable syntax in docker-compose ([17f915a](https://github.com/think-root/content-maestro/commit/17f915af3452fa866d75ef506cee4124061e6377))
+* **docker:** update PostgreSQL image to use alpine variant ([84ed9a7](https://github.com/think-root/content-maestro/commit/84ed9a7431e829e5f7087625ccba633d346fb9f8))
+* **docker:** update PostgreSQL image version to 17 ([520dbf0](https://github.com/think-root/content-maestro/commit/520dbf0ef503621910d88eaf89e12f89827cb53d))
+* **docker:** update PostgreSQL port variable to use POSTGRES_EXTERNAL_PORT ([a246995](https://github.com/think-root/content-maestro/commit/a246995ea176d4cb2e1b5a06e8178c3cd366b66a))
+* **env:** add PostgreSQL configuration to .env.example ([779f0b5](https://github.com/think-root/content-maestro/commit/779f0b5a66ed7297f4eed2d90947ccb2bc4c6a51))
+* **store:** order cron settings by id in GetAllCronSettings query ([07fd988](https://github.com/think-root/content-maestro/commit/07fd9880bba3cf9b6d35fb2d2f7af9e402a4a5cb))
+
+
+### Features
+
+* **db:** add initial PostgreSQL schema and seed data ([7f8e587](https://github.com/think-root/content-maestro/commit/7f8e58727a8a9164140112e10837413272496d88))
+* **db:** add PostgreSQL database service ([b8fd980](https://github.com/think-root/content-maestro/commit/b8fd980f0c0fd4d74974c2f4a6a2d50cd3994407))
+* **db:** add PostgreSQL store implementation ([50d343f](https://github.com/think-root/content-maestro/commit/50d343f68914dc27120743a8a8009df6a00d7ff1))
+* **db:** migrate store initialization to PostgreSQL ([4dae6ee](https://github.com/think-root/content-maestro/commit/4dae6eed6a2844e4880a093a9227e4c9e27c3438))
+* refine AI assistant instructions for repository descriptions ([d5469b5](https://github.com/think-root/content-maestro/commit/d5469b53c88ec8661dacd9b6f107c7a691c25638))
+* **schedule:** allow cron jobs to be configured via database ([814f9e6](https://github.com/think-root/content-maestro/commit/814f9e66f76f2314f78ed9e9e14e84199af8f08e))
+
+
+### BREAKING CHANGES
+
+* **db:** The application now requires PostgreSQL environment variables (POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_DB) to run. BadgerDB is no longer supported.
+
 # [1.13.0](https://github.com/think-root/content-maestro/compare/v1.12.0...v1.13.0) (2025-05-29)
 
 
