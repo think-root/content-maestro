@@ -8,7 +8,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=think-root-db
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "${POSTGRES_EXTERNAL_PORT:-5433}:5432"
     volumes:
       - content-maestro-postgres-data:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d
