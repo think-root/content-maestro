@@ -26,7 +26,7 @@ func main() {
 	log.Debug("Starting content-maestro application")
 	
 	if err := godotenv.Load(); err != nil {
-		log.Error("Error loading .env file: %v", err)
+		log.Errorf("Error loading .env file: %v", err)
 		log.Debug("Continuing without .env file - will use environment variables")
 	} else {
 		log.Debug(".env file loaded successfully")
@@ -42,15 +42,15 @@ func main() {
 	pgDBName := os.Getenv("POSTGRES_DB")
 
 	log.Debug("PostgreSQL configuration:")
-	log.Debug("POSTGRES_HOST: %s", pgHost)
-	log.Debug("POSTGRES_PORT: %s", pgPort)
-	log.Debug("POSTGRES_USER: %s", pgUser)
+	log.Debugf("POSTGRES_HOST: %s", pgHost)
+	log.Debugf("POSTGRES_PORT: %s", pgPort)
+	log.Debugf("POSTGRES_USER: %s", pgUser)
 	passwordStatus := "[EMPTY]"
 	if pgPassword != "" {
 		passwordStatus = "[SET]"
 	}
-	log.Debug("POSTGRES_PASSWORD: %s", passwordStatus)
-	log.Debug("POSTGRES_DB: %s", pgDBName)
+	log.Debugf("POSTGRES_PASSWORD: %s", passwordStatus)
+	log.Debugf("POSTGRES_DB: %s", pgDBName)
 
 	if pgHost == "" || pgPort == "" || pgUser == "" || pgDBName == "" {
 		log.Error("PostgreSQL environment variables are missing:")
@@ -62,11 +62,12 @@ func main() {
 		return
 	}
 
-	log.Debug("Initializing PostgreSQL store with connection string: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
+	log.Debugf("Initializing PostgreSQL store with connection string: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
+	log.Debugf("Attempting to connect to PostgreSQL...")
 	pgStore, err := store.NewPostgresStore(pgHost, pgPort, pgUser, pgPassword, pgDBName)
 	if err != nil {
-		log.Error("Error initializing PostgreSQL store: %v", err)
-		log.Error("Connection details: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
+		log.Errorf("Error initializing PostgreSQL store: %v", err)
+		log.Errorf("Connection details: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
 		return
 	}
 	storeInstance = pgStore
@@ -75,14 +76,14 @@ func main() {
 
 	log.Debug("Creating tmp/gh_project_img directory")
 	if err := os.MkdirAll("tmp/gh_project_img", 0777); err != nil {
-		log.Error("Error creating tmp/gh_project_img directory: %v", err)
+		log.Errorf("Error creating tmp/gh_project_img directory: %v", err)
 		return
 	}
 	log.Debug("Directory tmp/gh_project_img created successfully")
 
 	log.Debug("Initializing default settings")
 	if err := storeInstance.InitializeDefaultSettings(); err != nil {
-		log.Error("Error initializing default settings: %v", err)
+		log.Errorf("Error initializing default settings: %v", err)
 		return
 	}
 	log.Debug("Default settings initialized successfully")
@@ -114,6 +115,6 @@ func main() {
 
 	log.Debugf("Server starting on port %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		log.Error("Error starting server: %v", err)
+		log.Errorf("Error starting server: %v", err)
 	}
 }
