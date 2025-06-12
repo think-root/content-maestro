@@ -3,6 +3,7 @@ package main
 import (
 	"content-maestro/internal/logger"
 	"content-maestro/internal/middleware"
+	"content-maestro/internal/models"
 	"content-maestro/internal/schedule"
 	"content-maestro/internal/server"
 	"content-maestro/internal/store"
@@ -15,43 +16,60 @@ import (
 
 var log = logger.NewLogger()
 
+type StoreInterface interface {
+	Close() error
+	InitializeDefaultSettings() error
+	GetAllCronSettings() ([]models.CronSetting, error)
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Error("Error loading .env file")
 		return
 	}
 
-	dbPath := "data/badger"
-	if err := os.MkdirAll(dbPath, 0777); err != nil {
-		log.Error("Error creating database directory: %v", err)
+	var storeInstance store.StoreInterface
+	var err error
+
+	pgHost := os.Getenv("POSTGRES_HOST")
+	pgPort := os.Getenv("POSTGRES_PORT")
+	pgUser := os.Getenv("POSTGRES_USER")
+	pgPassword := os.Getenv("POSTGRES_PASSWORD")
+	pgDBName := os.Getenv("POSTGRES_DB")
+
+	if pgHost == "" || pgPort == "" || pgUser == "" || pgDBName == "" {
+		log.Error("PostgreSQL environment variables are missing (POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_DB). These are required to run the application.")
 		return
 	}
-	store, err := store.NewStore(dbPath)
+
+	log.Debug("Initializing PostgreSQL store")
+	pgStore, err := store.NewPostgresStore(pgHost, pgPort, pgUser, pgPassword, pgDBName)
 	if err != nil {
-		log.Error("Error initializing store: %v", err)
+		log.Error("Error initializing PostgreSQL store: %v", err)
 		return
 	}
-	defer store.Close()
+	storeInstance = pgStore
+	defer storeInstance.Close()
+	log.Debug("PostgreSQL store initialized")
 
 	if err := os.MkdirAll("tmp/gh_project_img", 0777); err != nil {
 		log.Error("Error creating tmp/gh_project_img directory: %v", err)
 		return
 	}
 
-	if err := store.InitializeDefaultSettings(); err != nil {
+	if err := storeInstance.InitializeDefaultSettings(); err != nil {
 		log.Error("Error initializing default settings: %v", err)
 		return
 	}
 
-	settings, _ := store.GetAllCronSettings()
-	schedulers := make(map[string]*gocron.Scheduler)
-
-	for _, setting := range settings {
-		schedulers[setting.Name] = schedule.NewScheduler(store, setting.Name, setting.Schedule)
+	schedulers := map[string]*gocron.Scheduler{
+		"collect": schedule.CollectCron(storeInstance),
+		"message": schedule.MessageCron(storeInstance),
 	}
 
-	jobs := schedule.InitJobs(store)
-	cronAPI := server.NewCronAPI(store, schedulers, jobs)
+	jobs := schedule.InitJobs(storeInstance)
+
+	cronAPI := server.NewCronAPI(storeInstance, schedulers, jobs)
 
 	mux := http.NewServeMux()
 
