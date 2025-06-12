@@ -16,7 +16,7 @@ import (
 
 var log = logger.NewLogger()
 
-func MessageJob(s *gocron.Scheduler, store *store.Store) {
+func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("cron job started")
 
 	repo, err := repository.GetRepository(1, false, "ASC", "date_added")
@@ -55,6 +55,8 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 	}
 
 	var successfulAPIs []string
+	var failedAPIs []string
+	var errorMessages []string
 
 	for apiName, endpoint := range api.GetAPIConfigs().APIs {
 		if !endpoint.Enabled {
@@ -92,19 +94,21 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 		resp, err := api.ExecuteRequest(req)
 		if err != nil {
 			log.Errorf("%s API error: %v", apiName, err)
-			store.LogCronExecution("message", false, err.Error())
-			return
+			failedAPIs = append(failedAPIs, apiName)
+			errorMessages = append(errorMessages, fmt.Sprintf("%s API error: %v", apiName, err))
 		} else if resp.Success {
 			log.Debugf("%s post created successfully!", apiName)
 			successfulAPIs = append(successfulAPIs, apiName)
 		}
 	}
 
+	if len(successfulAPIs) > 0 {
 		if _, err := repository.UpdateRepositoryPosted(item.URL, true); err != nil {
 			log.Error("Error updating repository posted status: %v", err)
 			store.LogCronExecution("message", false, err.Error())
 			return
 		}
+	}
 
 	err = utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
 	if err != nil {
@@ -113,11 +117,18 @@ func MessageJob(s *gocron.Scheduler, store *store.Store) {
 		return
 	}
 
-	msg := fmt.Sprintf("Message sent to: %s", strings.Join(successfulAPIs, ", "))
-	store.LogCronExecution("message", true, msg)
+	if len(successfulAPIs) == 0 {
+		store.LogCronExecution("message", false, "No messages sent successfully. Errors: "+strings.Join(errorMessages, "; "))
+	} else if len(failedAPIs) > 0 {
+		msg := fmt.Sprintf("Message sent to: %s. Failed: %s", strings.Join(successfulAPIs, ", "), strings.Join(failedAPIs, ", "))
+		store.LogCronExecution("message", true, msg+" Errors: "+strings.Join(errorMessages, "; "))
+	} else {
+		msg := fmt.Sprintf("Message sent to: %s", strings.Join(successfulAPIs, ", "))
+		store.LogCronExecution("message", true, msg)
+	}
 }
 
-func MessageCron(store *store.Store) *gocron.Scheduler {
+func MessageCron(store store.StoreInterface) *gocron.Scheduler {
 	setting, err := store.GetCronSetting("message")
 	if err != nil || setting == nil || !setting.IsActive {
 		log.Debug("Message cron is disabled")
