@@ -69,13 +69,10 @@ func main() {
 	}
 	log.Debug("Directory tmp/gh_project_img created successfully")
 
-	log.Debug("Initializing default settings")
 	if err := storeInstance.InitializeDefaultSettings(); err != nil {
 		log.Errorf("Error initializing default settings: %v", err)
 		return
 	}
-	log.Debug("Default settings initialized successfully")
-
 	schedulers := map[string]*gocron.Scheduler{
 		"collect": schedule.CollectCron(storeInstance),
 		"message": schedule.MessageCron(storeInstance),
