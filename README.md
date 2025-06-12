@@ -55,6 +55,7 @@ create a **.env** file in the app root directory
 | API_PORT                 | Port for the API server (default: 8080)                                                                   |
 | POSTGRES_HOST            | PostgreSQL database host (default: my-db)                                                                 |
 | POSTGRES_PORT            | PostgreSQL database port (default: 5432)                                                                  |
+| POSTGRES_EXTERNAL_PORT   | PostgreSQL external port for host mapping (default: 5432)                                                |
 | POSTGRES_USER            | PostgreSQL database username                                                                               |
 | POSTGRES_PASSWORD        | PostgreSQL database password                                                                               |
 | POSTGRES_DB              | PostgreSQL database name                                                                                   |
