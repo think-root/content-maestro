@@ -16,4 +16,6 @@ type StoreInterface interface {
 	GetCronHistory(name string, success *bool, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error)
 	GetCollectSettings() (*CollectSettings, error)
 	UpdateCollectSettings(settings *CollectSettings) error
+	GetPromptSettings() (*models.PromptSettings, error)
+	UpdatePromptSettings(settings *models.UpdatePromptSettingsRequest) error
 }
