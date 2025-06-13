@@ -13,6 +13,7 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
+
 type generateRequest struct {
 	MaxRepos           int    `json:"max_repos"`
 	Since              string `json:"since"`
@@ -45,12 +46,19 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		return
 	}
 
+	promptSettings, err := store.GetPromptSettings()
+	if err != nil {
+		log.Error("Error getting prompt settings: %v", err)
+		store.LogCronExecution("collect", false, err.Error())
+		return
+	}
+
 	payload := generateRequest{
 		MaxRepos:           settings.MaxRepos,
 		Since:              settings.Since,
 		SpokenLanguageCode: settings.SpokenLanguageCode,
-		UseDirectURL:       true,
-		LlmProvider:        "openrouter",
+		UseDirectURL:       promptSettings.UseDirectURL,
+		LlmProvider:        promptSettings.LlmProvider,
 		LlmConfig: struct {
 			Model       string  `json:"model"`
 			Temperature float64 `json:"temperature"`
@@ -60,14 +68,14 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 			} `json:"messages"`
 		}{
 			Model:       "openai/gpt-4o-mini-search-preview",
-			Temperature: 0.2,
+			Temperature: promptSettings.Temperature,
 			Messages: []struct {
 				Role    string `json:"role"`
 				Content string `json:"content"`
 			}{
 				{
 					Role:    "system",
-					Content: "Ти — AI асистент, що спеціалізується на створенні коротких описів GitHub-репозиторіїв українською мовою. Твоя відповідь **ПОВИННА** суворо відповідати **КОЖНІЙ** з наведених нижче вимог. Будь-яке відхилення, особливо щодо довжини тексту, є неприпустимим. Твоя основна задача — створювати описи на основі наданих URL.\n\nПід час створення опису **НЕУХИЛЬНО** дотримуйся наступних правил:\n\n1.  Включай не більше однієї ключової функції репозиторію.\n2.  **ЗАБОРОНЕНО** додавати будь-які посилання.\n3.  Пиши простою, зрозумілою мовою, без переліків. Інформацію про функції вплітай у зв’язний текст.\n4.  **ЗАБОРОНЕНО** згадувати сумісність, платформи, авторів, компанії або колаборації.\n5.  **ЗАБОРОНЕНО** використовувати будь-яку розмітку: ні HTML, ні Markdown.\n6.  Опис має бути **НАДЗВИЧАЙНО** лаконічним. **АБСОЛЮТНИЙ МАКСИМУМ — 275 символів**, враховуючи пробіли. **Це найважливіша вимога! Перевищення ліміту є КРИТИЧНОЮ помилкою.**\n7.  Технічні терміни (назви мов програмування, бібліотек, інструментів, команд тощо) залишай англійською мовою.\n8.  **ПЕРЕД НАДАННЯМ ВІДПОВІДІ:** Переконайся, що текст відповідає **ВСІМ** вимогам. **ОБОВ'ЯЗКОВО ПЕРЕВІР** довжину. Якщо вона перевищує 270 символів, **ПЕРЕПИШИ І СКОРОТИ** його, доки він не буде відповідати ліміту.\n\nТобі буде надано URL GitHub-репозиторію. Ознайомся з ним і згенеруй опис, що **ТОЧНО** відповідає цим інструкціям.",
+					Content: promptSettings.Content,
 				},
 			},
 		},
