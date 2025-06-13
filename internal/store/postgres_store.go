@@ -97,6 +97,40 @@ func createTablesIfNotExist(db *sql.DB) error {
 		return fmt.Errorf("failed to insert default collect settings: %v", err)
 	}
 
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS think_prompt (
+			id SERIAL PRIMARY KEY,
+			use_direct_url BOOLEAN NOT NULL DEFAULT TRUE,
+			llm_provider VARCHAR(255) NOT NULL DEFAULT 'openrouter',
+			temperature DECIMAL(3,2) NOT NULL DEFAULT 0.2,
+			content TEXT NOT NULL,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`)
+	if err != nil {
+		return fmt.Errorf("failed to create think_prompt table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO think_prompt (use_direct_url, llm_provider, temperature, content, updated_at)
+		SELECT TRUE, 'openrouter', 0.2, 'Ти — AI асистент, що спеціалізується на створенні коротких описів GitHub-репозиторіїв українською мовою. Твоя відповідь **ПОВИННА** суворо відповідати **КОЖНІЙ** з наведених нижче вимог. Будь-яке відхилення, особливо щодо довжини тексту, є неприпустимим. Твоя основна задача — створювати описи на основі наданих URL.
+
+Під час створення опису **НЕУХИЛЬНО** дотримуйся наступних правил:
+
+1.  Включай не більше однієї ключової функції репозиторію.
+2.  **ЗАБОРОНЕНО** додавати будь-які посилання.
+3.  Пиши простою, зрозумілою мовою, без переліків. Інформацію про функції вплітай у зв''язний текст.
+4.  **ЗАБОРОНЕНО** згадувати сумісність, платформи, авторів, компанії або колаборації.
+5.  **ЗАБОРОНЕНО** використовувати будь-яку розмітку: ні HTML, ні Markdown.
+6.  Опис має бути **НАДЗВИЧАЙНО** лаконічним. **АБСОЛЮТНИЙ МАКСИМУМ — 275 символів**, враховуючи пробіли. **Це найважливіша вимога! Перевищення ліміту є КРИТИЧНОЮ помилкою.**
+7.  Технічні терміни (назви мов програмування, бібліотек, інструментів, команд тощо) залишай англійською мовою.
+8.  **ПЕРЕД НАДАННЯМ ВІДПОВІДІ:** Переконайся, що текст відповідає **ВСІМ** вимогам. **ОБОВ''ЯЗКОВО ПЕРЕВІР** довжину. Якщо вона перевищує 270 символів, **ПЕРЕПИШИ І СКОРОТИ** його, доки він не буде відповідати ліміту.
+
+Тобі буде надано URL GitHub-репозиторію. Ознайомся з ним і згенеруй опис, що **ТОЧНО** відповідає цим інструкціям.', CURRENT_TIMESTAMP
+		WHERE NOT EXISTS (SELECT 1 FROM think_prompt)`)
+	if err != nil {
+		return fmt.Errorf("failed to insert default prompt settings: %v", err)
+	}
+
 	return nil
 }
 
