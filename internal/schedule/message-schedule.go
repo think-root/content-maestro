@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"content-maestro/internal/api"
-	"content-maestro/internal/logger"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
@@ -14,7 +13,6 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-var log = logger.NewLogger()
 
 func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("cron job started")
