@@ -127,13 +127,15 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 }
 
 func MessageCron(store store.StoreInterface) *gocron.Scheduler {
+	s := gocron.NewScheduler(time.UTC)
+	
 	setting, err := store.GetCronSetting("message")
 	if err != nil || setting == nil || !setting.IsActive {
 		log.Debug("Message cron is disabled")
-		return gocron.NewScheduler(time.UTC)
+		return s
 	}
 
-	s := gocron.NewScheduler(time.UTC)
+	log.Debugf("Message cron is enabled with schedule: %s", setting.Schedule)
 	s.Cron(setting.Schedule).Do(MessageJob, s, store)
 	s.StartAsync()
 	log.Debug("scheduler started successfully")
