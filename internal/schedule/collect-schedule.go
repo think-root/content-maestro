@@ -168,10 +168,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	case "ok":
 		log.Debugf("Successfully collected %d new repositories", len(response.Added))
 		success = true
-		logMessage = fmt.Sprintf("Successfully collected %d repositories. Added: %v", len(response.Added), response.Added)
-		if len(response.DontAdded) > 0 {
-			logMessage += fmt.Sprintf(". Skipped: %v", response.DontAdded)
-		}
+		logMessage = fmt.Sprintf("Successfully collected %d repositories.", len(response.Added))
 	case "error":
 		log.Error("API returned error status: %s", response.ErrorMessage)
 		success = false
