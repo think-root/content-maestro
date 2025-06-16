@@ -19,14 +19,11 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	
 	var success bool
 	var logMessage string
-	startTime := time.Now()
 	
 	defer func() {
-		duration := time.Since(startTime)
-		finalMessage := fmt.Sprintf("%s (duration: %v)", logMessage, duration)
 		
 		if r := recover(); r != nil {
-			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, finalMessage)
+			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Message job panic: %v", r)
 			if err := store.LogCronExecution("message", false, panicMessage); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
@@ -34,7 +31,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			panic(r)
 		}
 		
-		if err := store.LogCronExecution("message", success, finalMessage); err != nil {
+		if err := store.LogCronExecution("message", success, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
 	}()
