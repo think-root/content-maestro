@@ -236,11 +236,29 @@ func (s *PostgresStore) InitializeDefaultSettings() error {
 }
 
 func (s *PostgresStore) LogCronExecution(name string, success bool, output string) error {
+	if name == "" {
+		return fmt.Errorf("cron job name cannot be empty")
+	}
+	
+	const maxOutputLength = 10000
+	if len(output) > maxOutputLength {
+		output = output[:maxOutputLength-50] + "... [truncated due to length]"
+	}
+	
 	query := "INSERT INTO maestro_cron_history (name, timestamp, success, output) VALUES ($1, $2, $3, $4)"
-	_, err := s.db.Exec(query, name, time.Now(), success, output)
+	timestamp := time.Now()
+	
+	_, err := s.db.Exec(query, name, timestamp, success, output)
 	if err != nil {
+		fmt.Printf("Failed to log cron execution to database: %v\n", err)
+		fmt.Printf("Attempted to log: name=%s, success=%t, timestamp=%v, output_length=%d\n",
+			name, success, timestamp, len(output))
 		return fmt.Errorf("failed to log cron execution: %v", err)
 	}
+	
+	fmt.Printf("Successfully logged cron execution: name=%s, success=%t, timestamp=%v\n",
+		name, success, timestamp)
+	
 	return nil
 }
 

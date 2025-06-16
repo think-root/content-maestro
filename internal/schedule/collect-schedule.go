@@ -31,25 +31,50 @@ type generateRequest struct {
 }
 
 type generateResponse struct {
-	Status    string   `json:"status"`
-	Added     []string `json:"added"`
-	DontAdded []string `json:"dont_added"`
+	Status       string   `json:"status"`
+	Added        []string `json:"added"`
+	DontAdded    []string `json:"dont_added"`
+	ErrorMessage string   `json:"error_message"`
 }
 
 func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("Collecting posts...")
+	
+	var success bool
+	var logMessage string
+	startTime := time.Now()
+	
+	defer func() {
+		duration := time.Since(startTime)
+		finalMessage := fmt.Sprintf("%s (duration: %v)", logMessage, duration)
+		
+		if r := recover(); r != nil {
+			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, finalMessage)
+			log.Error("Collect job panic: %v", r)
+			if err := store.LogCronExecution("collect", false, panicMessage); err != nil {
+				log.Error("Failed to log panic execution: %v", err)
+			}
+			panic(r)
+		}
+		
+		if err := store.LogCronExecution("collect", success, finalMessage); err != nil {
+			log.Error("Failed to log cron execution: %v", err)
+		}
+	}()
 
 	settings, err := store.GetCollectSettings()
 	if err != nil {
 		log.Error("Error getting collect settings: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error getting collect settings: %v", err)
 		return
 	}
 
 	promptSettings, err := store.GetPromptSettings()
 	if err != nil {
 		log.Error("Error getting prompt settings: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error getting prompt settings: %v", err)
 		return
 	}
 
@@ -84,14 +109,16 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("Error marshaling request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error marshaling request: %v", err)
 		return
 	}
 
 	req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error("Error creating request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error creating request: %v", err)
 		return
 	}
 
@@ -100,19 +127,30 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("CONTENT_ALCHEMIST_BEARER"))
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Error sending request: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error sending request: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Error("API returned HTTP error: %d %s", resp.StatusCode, resp.Status)
+		success = false
+		logMessage = fmt.Sprintf("API returned HTTP error: %d %s", resp.StatusCode, resp.Status)
+		return
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Error reading response: %v", err)
-		store.LogCronExecution("collect", false, err.Error())
+		success = false
+		logMessage = fmt.Sprintf("Error reading response: %v", err)
 		return
 	}
 
@@ -121,16 +159,37 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	var response generateResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		log.Error("Error unmarshaling response: %v", err)
-		store.LogCronExecution("collect", false, fmt.Sprintf("Error unmarshaling response: %v. Response body: %s", err, string(body)))
+		success = false
+		logMessage = fmt.Sprintf("Error unmarshaling response: %v. Response body: %s", err, string(body))
 		return
 	}
 
-	if response.Status == "ok" {
+	switch response.Status {
+	case "ok":
 		log.Debugf("Successfully collected %d new repositories", len(response.Added))
-		msg := fmt.Sprintf("Collected repos: %d", len(response.Added))
-		store.LogCronExecution("collect", true, msg)
-	} else {
-		store.LogCronExecution("collect", false, "API returned non-ok status")
+		success = true
+		logMessage = fmt.Sprintf("Successfully collected %d repositories. Added: %v", len(response.Added), response.Added)
+		if len(response.DontAdded) > 0 {
+			logMessage += fmt.Sprintf(". Skipped: %v", response.DontAdded)
+		}
+	case "error":
+		log.Error("API returned error status: %s", response.ErrorMessage)
+		success = false
+		if response.ErrorMessage != "" {
+			logMessage = fmt.Sprintf("API error: %s", response.ErrorMessage)
+		} else {
+			logMessage = "API returned error status without error message"
+		}
+		if len(response.DontAdded) > 0 {
+			logMessage += fmt.Sprintf(". Failed repositories: %v", response.DontAdded)
+		}
+	default:
+		log.Error("API returned unknown status: %s", response.Status)
+		success = false
+		logMessage = fmt.Sprintf("API returned unknown status: %s", response.Status)
+		if response.ErrorMessage != "" {
+			logMessage += fmt.Sprintf(". Error message: %s", response.ErrorMessage)
+		}
 	}
 }
 
