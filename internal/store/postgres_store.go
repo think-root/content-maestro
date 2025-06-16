@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"content-maestro/internal/models"
@@ -60,6 +61,13 @@ func createTablesIfNotExist(db *sql.DB) error {
 		)`)
 	if err != nil {
 		return fmt.Errorf("failed to create maestro_cron_history table: %v", err)
+	}
+
+	_, err = db.Exec(`
+		SELECT setval(pg_get_serial_sequence('maestro_cron_history', 'id'),
+		COALESCE((SELECT MAX(id) FROM maestro_cron_history), 0) + 1, false)`)
+	if err != nil {
+		fmt.Printf("Warning: Could not reset sequence for maestro_cron_history: %v\n", err)
 	}
 
 	_, err = db.Exec(`
@@ -245,14 +253,37 @@ func (s *PostgresStore) LogCronExecution(name string, success bool, output strin
 		output = output[:maxOutputLength-50] + "... [truncated due to length]"
 	}
 	
-	query := "INSERT INTO maestro_cron_history (name, timestamp, success, output) VALUES ($1, $2, $3, $4)"
 	timestamp := time.Now()
 	
+	query := "INSERT INTO maestro_cron_history (name, timestamp, success, output) VALUES ($1, $2, $3, $4)"
 	_, err := s.db.Exec(query, name, timestamp, success, output)
+	
 	if err != nil {
 		fmt.Printf("Failed to log cron execution to database: %v\n", err)
 		fmt.Printf("Attempted to log: name=%s, success=%t, timestamp=%v, output_length=%d\n",
 			name, success, timestamp, len(output))
+		
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			fmt.Printf("Attempting to fix sequence and retry...\n")
+			
+			_, seqErr := s.db.Exec(`
+				SELECT setval(pg_get_serial_sequence('maestro_cron_history', 'id'),
+				COALESCE((SELECT MAX(id) FROM maestro_cron_history), 0) + 1, false)`)
+			
+			if seqErr != nil {
+				fmt.Printf("Failed to fix sequence: %v\n", seqErr)
+			} else {
+				_, retryErr := s.db.Exec(query, name, timestamp, success, output)
+				if retryErr == nil {
+					fmt.Printf("Successfully logged cron execution after sequence fix: name=%s, success=%t, timestamp=%v\n",
+						name, success, timestamp)
+					return nil
+				} else {
+					fmt.Printf("Retry failed: %v\n", retryErr)
+				}
+			}
+		}
+		
 		return fmt.Errorf("failed to log cron execution: %v", err)
 	}
 	
