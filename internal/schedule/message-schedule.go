@@ -142,19 +142,17 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 	if len(successfulAPIs) == 0 {
 		success = false
-		logMessage = fmt.Sprintf("No messages sent successfully. Repository: %s. Errors: %s", item.URL, strings.Join(errorMessages, "; "))
+		logMessage = fmt.Sprintf("No messages sent successfully. Errors: %s", strings.Join(errorMessages, "; "))
 	} else if len(failedAPIs) > 0 {
 		success = true
-		logMessage = fmt.Sprintf("Message sent to: %s. Failed: %s. Repository: %s. Errors: %s",
+		logMessage = fmt.Sprintf("Message sent to: %s. Failed: %s. Errors: %s",
 			strings.Join(successfulAPIs, ", "),
 			strings.Join(failedAPIs, ", "),
-			item.URL,
 			strings.Join(errorMessages, "; "))
 	} else {
 		success = true
-		logMessage = fmt.Sprintf("Message sent successfully to: %s. Repository: %s",
-			strings.Join(successfulAPIs, ", "),
-			item.URL)
+		logMessage = fmt.Sprintf("Message sent successfully to: %s",
+			strings.Join(successfulAPIs, ", "))
 	}
 }
 

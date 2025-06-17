@@ -163,9 +163,9 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 	switch response.Status {
 	case "ok":
-		log.Debugf("Successfully collected %d new repositories", len(response.Added))
+		log.Debugf("Collected %d new repositories", len(response.Added))
 		success = true
-		logMessage = fmt.Sprintf("Successfully collected %d repositories.", len(response.Added))
+		logMessage = fmt.Sprintf("Collected %d repositories.", len(response.Added))
 		if len(response.DontAdded) > 0 {
 			logMessage += fmt.Sprintf(" Already exists %d repositories.", len(response.DontAdded))
 		}
