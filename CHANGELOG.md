@@ -1,3 +1,27 @@
+# [2.1.0](https://github.com/think-root/content-maestro/compare/v2.0.0...v2.1.0) (2025-06-17)
+
+
+### Bug Fixes
+
+* remove unnecessary logging of skipped repositories ([f574072](https://github.com/think-root/content-maestro/commit/f5740728a8854cfa966c92634228859ac2fe6807))
+* **schedule:** ensure scheduler returns correctly when cron is disabled ([772fd20](https://github.com/think-root/content-maestro/commit/772fd20df09906ee390f5479c060ec951be5969c))
+* **schedule:** improve cron job logging and error handling ([8a1e884](https://github.com/think-root/content-maestro/commit/8a1e884e6a9736fa3b96aa0148589afd99807eb0))
+* **store:** handle duplicate key constraint in LogCronExecution ([df1590c](https://github.com/think-root/content-maestro/commit/df1590c78df5e530521df663c1da229b4a2ebdb4))
+
+
+### Features
+
+* **api:** add endpoints for prompt settings management ([5498f3f](https://github.com/think-root/content-maestro/commit/5498f3f78cc9e0c37ebd0c4d4e377787f06180bd))
+* **api:** add prompt settings endpoints ([ed923d7](https://github.com/think-root/content-maestro/commit/ed923d7d4407500ae99aec3c0eb6c432d87b72c5))
+* **db:** add think_prompt table and default prompt ([220b8eb](https://github.com/think-root/content-maestro/commit/220b8ebeee87591477d7cc7632173190d822deed))
+* **models:** add prompt settings data structures ([5a5d1cf](https://github.com/think-root/content-maestro/commit/5a5d1cf43df35bbc0e7b46e8cff2b5da4fc88ff0))
+* **schedule:** include count of existing repositories in log message ([3a0db10](https://github.com/think-root/content-maestro/commit/3a0db10de1f3151667190125793412a499998417))
+* **schedule:** simplify cron job logging messages ([90077cd](https://github.com/think-root/content-maestro/commit/90077cdda6fc109f47f18f33515da3a0016d50f5))
+* **schedule:** use dynamic prompt settings for collect job ([d06516d](https://github.com/think-root/content-maestro/commit/d06516d39d135d1bc9443ccaf9b9cd1381db3b0f))
+* **store:** add prompt settings interface methods ([244aeaa](https://github.com/think-root/content-maestro/commit/244aeaa552d3a0918a2d12b4cb1e4f793a412e51))
+* **store:** add prompt settings persistence methods ([a2ba2c4](https://github.com/think-root/content-maestro/commit/a2ba2c4bacfd05f47ef9ffa737ecb719d21a8be9))
+* **validation:** add prompt settings validation ([c60f0b6](https://github.com/think-root/content-maestro/commit/c60f0b6f61f40cedcc43d647c450a94f81fdfe5d))
+
 # [2.0.0](https://github.com/think-root/content-maestro/compare/v1.13.0...v2.0.0) (2025-06-12)
 
 
