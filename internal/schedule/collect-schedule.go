@@ -89,7 +89,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 				Content string `json:"content"`
 			} `json:"messages"`
 		}{
-			Model:       "openai/gpt-4o-mini-search-preview",
+			Model:       promptSettings.Model,
 			Temperature: promptSettings.Temperature,
 			Messages: []struct {
 				Role    string `json:"role"`
