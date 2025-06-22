@@ -112,6 +112,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 			llm_provider VARCHAR(255) NOT NULL DEFAULT 'openrouter',
 			temperature DECIMAL(3,2) NOT NULL DEFAULT 0.2,
 			content TEXT NOT NULL,
+			model VARCHAR(255) NOT NULL DEFAULT 'openai/gpt-4o-mini-search-preview',
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`)
 	if err != nil {
@@ -119,7 +120,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 	}
 
 	_, err = db.Exec(`
-		INSERT INTO think_prompt (use_direct_url, llm_provider, temperature, content, updated_at)
+		INSERT INTO think_prompt (use_direct_url, llm_provider, temperature, content, model, updated_at)
 		SELECT TRUE, 'openrouter', 0.2, 'Ти — AI асистент, що спеціалізується на створенні коротких описів GitHub-репозиторіїв українською мовою. Твоя відповідь **ПОВИННА** суворо відповідати **КОЖНІЙ** з наведених нижче вимог. Будь-яке відхилення, особливо щодо довжини тексту, є неприпустимим. Твоя основна задача — створювати описи на основі наданих URL.
 
 Під час створення опису **НЕУХИЛЬНО** дотримуйся наступних правил:
@@ -133,7 +134,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 7.  Технічні терміни (назви мов програмування, бібліотек, інструментів, команд тощо) залишай англійською мовою.
 8.  **ПЕРЕД НАДАННЯМ ВІДПОВІДІ:** Переконайся, що текст відповідає **ВСІМ** вимогам. **ОБОВ''ЯЗКОВО ПЕРЕВІР** довжину. Якщо вона перевищує 270 символів, **ПЕРЕПИШИ І СКОРОТИ** його, доки він не буде відповідати ліміту.
 
-Тобі буде надано URL GitHub-репозиторію. Ознайомся з ним і згенеруй опис, що **ТОЧНО** відповідає цим інструкціям.', CURRENT_TIMESTAMP
+Тобі буде надано URL GitHub-репозиторію. Ознайомся з ним і згенеруй опис, що **ТОЧНО** відповідає цим інструкціям.', 'openai/gpt-4o-mini-search-preview', CURRENT_TIMESTAMP
 		WHERE NOT EXISTS (SELECT 1 FROM think_prompt)`)
 	if err != nil {
 		return fmt.Errorf("failed to insert default prompt settings: %v", err)
