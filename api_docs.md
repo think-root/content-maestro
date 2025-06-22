@@ -162,8 +162,9 @@ Returns the current AI prompt settings used for content generation.
 ```json
 {
   "use_direct_url": true,
-  "llm_provider": "openai",
-  "temperature": 0.7,
+  "llm_provider": "openrouter",
+  "temperature": 0.1,
+  "model": "openai/gpt-4o-mini-search-preview",
   "content": "You are a helpful AI assistant that generates engaging content about software repositories.",
   "updated_at": "2024-03-15T10:00:00Z"
 }
@@ -182,8 +183,9 @@ Update the AI prompt settings for content generation.
 ```json
 {
   "use_direct_url": false,
-  "llm_provider": "openai",
-  "temperature": 0.2,
+  "llm_provider": "openrouter",
+  "temperature": 0.1,
+  "model": "openai/gpt-4o-mini",
   "content": "You are an expert technical writer specializing in open-source projects."
 }
 ```
@@ -192,6 +194,7 @@ Update the AI prompt settings for content generation.
 - `use_direct_url` (boolean, optional): Whether to use direct URL for LLM API calls
 - `llm_provider` (string, optional): LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)
 - `temperature` (float, optional): Controls randomness in AI responses (0.0-2.0)
+- `model` (string, optional): The AI model to use for content generation
 - `content` (string, optional): The prompt content/template for AI generation
 
 **Response example:**
@@ -411,6 +414,7 @@ curl -X POST \
     "use_direct_url": false,
     "llm_provider": "anthropic",
     "temperature": 0.8,
+    "model": "anthropic/claude-3-sonnet",
     "content": "You are an expert technical writer specializing in open-source projects."
   }' \
   http://localhost:8080/api/prompt-settings/update
