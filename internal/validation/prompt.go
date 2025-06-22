@@ -26,5 +26,9 @@ func ValidatePromptSettings(settings *models.UpdatePromptSettingsRequest) error 
 		return errors.New("content cannot be empty")
 	}
 	
+	if settings.Model != nil && *settings.Model == "" {
+		return errors.New("model cannot be empty")
+	}
+	
 	return nil
 }
