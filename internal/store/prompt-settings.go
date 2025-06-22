@@ -9,10 +9,10 @@ import (
 func (s *PostgresStore) GetPromptSettings() (*models.PromptSettings, error) {
 	var settings models.PromptSettings
 	err := s.db.QueryRow(`
-		SELECT use_direct_url, llm_provider, temperature, content, updated_at
+		SELECT use_direct_url, llm_provider, temperature, content, model, updated_at
 		FROM think_prompt
 		WHERE id = 1
-	`).Scan(&settings.UseDirectURL, &settings.LlmProvider, &settings.Temperature, &settings.Content, &settings.UpdatedAt)
+	`).Scan(&settings.UseDirectURL, &settings.LlmProvider, &settings.Temperature, &settings.Content, &settings.Model, &settings.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +47,12 @@ func (s *PostgresStore) UpdatePromptSettings(settings *models.UpdatePromptSettin
 	if settings.Content != nil {
 		query += fmt.Sprintf(", content = $%d", argIndex)
 		args = append(args, *settings.Content)
+		argIndex++
+	}
+	
+	if settings.Model != nil {
+		query += fmt.Sprintf(", model = $%d", argIndex)
+		args = append(args, *settings.Model)
 		argIndex++
 	}
 	
