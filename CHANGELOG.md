@@ -1,3 +1,14 @@
+# [2.2.0](https://github.com/think-root/content-maestro/compare/v2.1.0...v2.2.0) (2025-06-22)
+
+
+### Features
+
+* **db:** add model field to think_prompt table ([030138f](https://github.com/think-root/content-maestro/commit/030138fda288f5a4890b267b12dab729994a2d13))
+* **db:** add model to prompt settings ([e897b62](https://github.com/think-root/content-maestro/commit/e897b6285a133d7e34ec6f393ade2e2ecbcaf9ee))
+* **models:** add model field ([bdf5cd4](https://github.com/think-root/content-maestro/commit/bdf5cd437fc2b466f30843ea5c89e5261d5b0758))
+* **schedule:** use prompt settings model ([8f87101](https://github.com/think-root/content-maestro/commit/8f87101aecf96d2cb70874122ec7fc458487e1d6))
+* **validation:** add model validation ([03e8d19](https://github.com/think-root/content-maestro/commit/03e8d19cc515e2e5d6850273b53d8f5742099e8d))
+
 # [2.1.0](https://github.com/think-root/content-maestro/compare/v2.0.0...v2.1.0) (2025-06-17)
 
 
