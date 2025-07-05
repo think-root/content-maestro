@@ -19,7 +19,7 @@
 * **validation:** add model validation ([03e8d19](https://github.com/think-root/content-maestro/commit/03e8d19cc515e2e5d6850273b53d8f5742099e8d))
 
 
-# [2.2.0](https://github.com/think-root/content-maestro/compare/v2.1.0...v2.2.0) (2025-07-05)
+# [2.2.0](https://github.com/think-root/content-maestro/compare/v2.1.0...v2.2.0) (2025-06-22)
 
 
 ### Features
