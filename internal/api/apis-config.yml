@@ -21,6 +21,7 @@ apis:
     success_code: 200
     enabled: true
     response_type: "json"
+    text_language: "en"
 
   telegram:
     url: "{env.TELEGRAM_SERVER_URL}/telegram/send-message"
@@ -33,3 +34,4 @@ apis:
     success_code: 200
     enabled: true
     response_type: "json"
+    text_language: "uk"
