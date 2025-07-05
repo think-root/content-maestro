@@ -23,7 +23,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/think-root/content-maestro.git
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -33,76 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Release with tag conflict handling
+      - name: Release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          # Function to get next patch version
-          get_next_version() {
-            local current_tag=$1
-            if [[ $current_tag =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              local major=${BASH_REMATCH[1]}
-              local minor=${BASH_REMATCH[2]}
-              local patch=${BASH_REMATCH[3]}
-              echo "v$major.$minor.$((patch + 1))"
-            else
-              echo "v0.0.1"
-            fi
-          }
-          
-          # Try semantic-release first
-          if npx semantic-release --debug; then
-            echo "Semantic-release completed successfully"
-            exit 0
-          fi
-          
-          echo "Semantic-release failed, handling tag conflicts..."
-          
-          # Fetch all tags
-          git fetch --tags
-          
-          # Get the latest tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest existing tag: $LATEST_TAG"
-          
-          # Generate next version
-          NEXT_VERSION=$(get_next_version "$LATEST_TAG")
-          echo "Next version will be: $NEXT_VERSION"
-          
-          # Check if the next version tag already exists and clean it up
-          while git tag -l | grep -q "^$NEXT_VERSION$" || git ls-remote --tags origin | grep -q "refs/tags/$NEXT_VERSION$"; do
-            echo "Tag $NEXT_VERSION already exists, removing it..."
-            git tag -d "$NEXT_VERSION" 2>/dev/null || true
-            git push origin ":refs/tags/$NEXT_VERSION" 2>/dev/null || true
-            
-            # Get next version after cleanup
-            NEXT_VERSION=$(get_next_version "$NEXT_VERSION")
-            echo "Trying next version: $NEXT_VERSION"
-          done
-          
-          # Update package.json with new version
-          NEW_VERSION_NUMBER=${NEXT_VERSION#v}
-          echo "Updating package.json to version $NEW_VERSION_NUMBER"
-          npm version $NEW_VERSION_NUMBER --no-git-tag-version
-          
-          # Reset any changes to CHANGELOG.md that might have been made by semantic-release
-          git checkout HEAD -- CHANGELOG.md 2>/dev/null || true
-          
-          # Commit only the package.json version change
-          git add package.json
-          git commit -m "chore(release): $NEW_VERSION_NUMBER [skip ci]"
-          
-          # Create and push the tag
-          git tag $NEXT_VERSION
-          git push origin main
-          git push origin $NEXT_VERSION
-          
-          # Create GitHub release
-          gh release create $NEXT_VERSION \
-            --title "Release $NEXT_VERSION" \
-            --notes "Automated release $NEXT_VERSION - resolved tag conflict" \
-            --target main
-          
-          echo "Successfully created release $NEXT_VERSION"
+        run: npx semantic-release --debug
