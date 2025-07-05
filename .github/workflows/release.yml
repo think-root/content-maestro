@@ -32,9 +32,64 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Check and clean existing tags
+        run: |
+          # Get the next version that semantic-release would use
+          NEXT_VERSION=$(npx semantic-release --dry-run --debug 2>&1 | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' | tail -1 || echo "")
+          
+          if [ ! -z "$NEXT_VERSION" ]; then
+            echo "Next version would be: v$NEXT_VERSION"
+            
+            # Check if tag exists locally
+            if git tag -l | grep -q "^v$NEXT_VERSION$"; then
+              echo "Tag v$NEXT_VERSION exists locally, removing it..."
+              git tag -d "v$NEXT_VERSION" || true
+            fi
+            
+            # Check if tag exists on remote
+            if git ls-remote --tags origin | grep -q "refs/tags/v$NEXT_VERSION$"; then
+              echo "Tag v$NEXT_VERSION exists on remote, removing it..."
+              git push origin ":refs/tags/v$NEXT_VERSION" || true
+            fi
+          else
+            echo "Could not determine next version, proceeding with release..."
+          fi
+
       - name: Release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release --debug
+        run: |
+          # Try semantic-release first
+          if ! npx semantic-release --debug; then
+            echo "Semantic-release failed, attempting cleanup and retry..."
+            
+            # Get current version from package.json or try to determine next version
+            CURRENT_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Clean up any problematic tags
+            git fetch --tags
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            echo "Latest tag: $LATEST_TAG"
+            
+            # If the latest tag matches what we're trying to release, increment patch version
+            if [ "$LATEST_TAG" = "v$CURRENT_VERSION" ]; then
+              echo "Tag conflict detected, cleaning up and retrying..."
+              
+              # Remove the conflicting tag locally and remotely
+              git tag -d "$LATEST_TAG" 2>/dev/null || true
+              git push origin ":refs/tags/$LATEST_TAG" 2>/dev/null || true
+              
+              # Wait a moment for remote cleanup
+              sleep 2
+              
+              # Retry semantic-release
+              echo "Retrying semantic-release after cleanup..."
+              npx semantic-release --debug
+            else
+              echo "Different tag conflict, manual intervention may be needed"
+              exit 1
+            fi
+          fi
