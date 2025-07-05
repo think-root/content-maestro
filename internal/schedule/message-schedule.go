@@ -36,7 +36,23 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	}()
 
-	repo, err := repository.GetRepository(1, false, "ASC", "date_added")
+	err := api.LoadAPIConfigs("./internal/api/apis-config.yml")
+	if err != nil {
+		log.Error("Failed to load API configurations: %v", err)
+		success = false
+		logMessage = fmt.Sprintf("Failed to load API configurations: %v", err)
+		return
+	}
+
+	var textLanguage string
+	for _, endpoint := range api.GetAPIConfigs().APIs {
+		if endpoint.Enabled && endpoint.TextLanguage != "" {
+			textLanguage = endpoint.TextLanguage
+			break
+		}
+	}
+
+	repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
 	if err != nil {
 		log.Error("Error getting repository: %v", err)
 		success = false
@@ -67,13 +83,6 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	}
 
-	err = api.LoadAPIConfigs("./internal/api/apis-config.yml")
-	if err != nil {
-		log.Error("Failed to load API configurations: %v", err)
-		success = false
-		logMessage = fmt.Sprintf("Failed to load API configurations: %v", err)
-		return
-	}
 
 	var successfulAPIs []string
 	var failedAPIs []string
