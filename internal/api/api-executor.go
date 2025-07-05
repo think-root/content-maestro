@@ -34,6 +34,7 @@ type APIEndpoint struct {
 	SuccessCode  int               `yaml:"success_code"`
 	Enabled      bool              `yaml:"enabled"`
 	ResponseType string            `yaml:"response_type"`
+	TextLanguage string            `yaml:"text_language"`
 }
 
 type RequestConfig struct {
