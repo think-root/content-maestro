@@ -37,13 +37,34 @@ type repositoryResponse struct {
 	Status  string `json:"status"`
 }
 
-func GetRepository(limit int, posted bool, sort_order, sort_by string) (*repositoryResponse, error) {
-	payload := strings.NewReader(fmt.Sprintf(`{
-		"limit": %d,
-		"posted": %t,
-		"sort_order": "%s",
-		"sort_by": "%s"
-	}`, limit, posted, sort_order, sort_by))
+func GetRepository(limit int, posted bool, sort_order, sort_by string, textLanguage ...string) (*repositoryResponse, error) {
+	var lang string
+	if len(textLanguage) > 0 && textLanguage[0] != "" {
+		lang = textLanguage[0]
+	}
+
+	response, err := makeRepositoryRequest(limit, posted, sort_order, sort_by, lang)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Status == "error" && strings.Contains(response.Message, "no text available for language") && lang != "uk" {
+		return makeRepositoryRequest(limit, posted, sort_order, sort_by, "uk")
+	}
+
+	return response, nil
+}
+
+func makeRepositoryRequest(limit int, posted bool, sort_order, sort_by, textLanguage string) (*repositoryResponse, error) {
+	payloadStr := fmt.Sprintf(`{
+			"limit": %d,
+			"posted": %t,
+			"sort_order": "%s",
+			"sort_by": "%s",
+			"text_language": "%s"
+		}`, limit, posted, sort_order, sort_by, textLanguage)
+
+	payload := strings.NewReader(payloadStr)
 
 	req, err := http.NewRequest(http.MethodPost, getRepositoryUrl, payload)
 	if err != nil {
