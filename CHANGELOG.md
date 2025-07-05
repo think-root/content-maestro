@@ -3,39 +3,10 @@
 
 ### Features
 
-* **api:** add text_language parameter to GetRepository ([98d1d1e](https://github.com/think-root/content-maestro/commit/98d1d1e12cdae2e77d5a36da8b83a3a887cf1b14))
-* **api:** add text_language to APIEndpoint ([6857339](https://github.com/think-root/content-maestro/commit/685733911ddb553f5826378074cc6a762b25eb0e))
-* **config:** add text_language to apis-config.yml ([565a228](https://github.com/think-root/content-maestro/commit/565a2286769063cc128ee1fa5409579db614e520))
-* **db:** add llm_output_language column to think_prompt table ([61052a9](https://github.com/think-root/content-maestro/commit/61052a980572c421503171330d6d139ad5fe4aea))
 * **db:** add model field to think_prompt table ([030138f](https://github.com/think-root/content-maestro/commit/030138fda288f5a4890b267b12dab729994a2d13))
 * **db:** add model to prompt settings ([e897b62](https://github.com/think-root/content-maestro/commit/e897b6285a133d7e34ec6f393ade2e2ecbcaf9ee))
-* **internal/schedule:** add llm_output_language to generateRequest ([b0159a5](https://github.com/think-root/content-maestro/commit/b0159a52619d6e9bd20159e48abbdf9404fdb559))
-* **internal/schedule:** add text_language parameter handling ([40070f6](https://github.com/think-root/content-maestro/commit/40070f68ca6bf38791e959c2276031c7c83c17e9))
-* **internal/store:** add llm_output_language to prompt settings query ([34b2c27](https://github.com/think-root/content-maestro/commit/34b2c2757bf8e6c90f1fc4834f7901df119a3b63))
-* **models:** add llm_output_language to prompt settings ([7db2db3](https://github.com/think-root/content-maestro/commit/7db2db3e729daefa679be60c39434032a1c21368))
 * **models:** add model field ([bdf5cd4](https://github.com/think-root/content-maestro/commit/bdf5cd437fc2b466f30843ea5c89e5261d5b0758))
 * **schedule:** use prompt settings model ([8f87101](https://github.com/think-root/content-maestro/commit/8f87101aecf96d2cb70874122ec7fc458487e1d6))
-* **validation:** add language code validation for prompt settings ([6d06ba6](https://github.com/think-root/content-maestro/commit/6d06ba636251bfa67a936c45cc086531a3364db6))
-* **validation:** add model validation ([03e8d19](https://github.com/think-root/content-maestro/commit/03e8d19cc515e2e5d6850273b53d8f5742099e8d))
-
-# [2.2.0](https://github.com/think-root/content-maestro/compare/v2.1.0...v2.2.0) (2025-07-05)
-
-
-### Features
-
-* **api:** add text_language parameter to GetRepository ([98d1d1e](https://github.com/think-root/content-maestro/commit/98d1d1e12cdae2e77d5a36da8b83a3a887cf1b14))
-* **api:** add text_language to APIEndpoint ([6857339](https://github.com/think-root/content-maestro/commit/685733911ddb553f5826378074cc6a762b25eb0e))
-* **config:** add text_language to apis-config.yml ([565a228](https://github.com/think-root/content-maestro/commit/565a2286769063cc128ee1fa5409579db614e520))
-* **db:** add llm_output_language column to think_prompt table ([61052a9](https://github.com/think-root/content-maestro/commit/61052a980572c421503171330d6d139ad5fe4aea))
-* **db:** add model field to think_prompt table ([030138f](https://github.com/think-root/content-maestro/commit/030138fda288f5a4890b267b12dab729994a2d13))
-* **db:** add model to prompt settings ([e897b62](https://github.com/think-root/content-maestro/commit/e897b6285a133d7e34ec6f393ade2e2ecbcaf9ee))
-* **internal/schedule:** add llm_output_language to generateRequest ([b0159a5](https://github.com/think-root/content-maestro/commit/b0159a52619d6e9bd20159e48abbdf9404fdb559))
-* **internal/schedule:** add text_language parameter handling ([40070f6](https://github.com/think-root/content-maestro/commit/40070f68ca6bf38791e959c2276031c7c83c17e9))
-* **internal/store:** add llm_output_language to prompt settings query ([34b2c27](https://github.com/think-root/content-maestro/commit/34b2c2757bf8e6c90f1fc4834f7901df119a3b63))
-* **models:** add llm_output_language to prompt settings ([7db2db3](https://github.com/think-root/content-maestro/commit/7db2db3e729daefa679be60c39434032a1c21368))
-* **models:** add model field ([bdf5cd4](https://github.com/think-root/content-maestro/commit/bdf5cd437fc2b466f30843ea5c89e5261d5b0758))
-* **schedule:** use prompt settings model ([8f87101](https://github.com/think-root/content-maestro/commit/8f87101aecf96d2cb70874122ec7fc458487e1d6))
-* **validation:** add language code validation for prompt settings ([6d06ba6](https://github.com/think-root/content-maestro/commit/6d06ba636251bfa67a936c45cc086531a3364db6))
 * **validation:** add model validation ([03e8d19](https://github.com/think-root/content-maestro/commit/03e8d19cc515e2e5d6850273b53d8f5742099e8d))
 
 # [2.1.0](https://github.com/think-root/content-maestro/compare/v2.0.0...v2.1.0) (2025-06-17)
