@@ -141,41 +141,9 @@ func createTablesIfNotExist(db *sql.DB) error {
 		return fmt.Errorf("failed to insert default prompt settings: %v", err)
 	}
 
-	// migration for llm_output_language column
-	err = addLlmOutputLanguageColumn(db)
-	if err != nil {
-		return fmt.Errorf("failed to add llm_output_language column: %v", err)
-	}
-
 	return nil
 }
 
-func addLlmOutputLanguageColumn(db *sql.DB) error {
-	var exists bool
-	err := db.QueryRow(`
-		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns
-			WHERE table_name = 'think_prompt'
-			AND column_name = 'llm_output_language'
-		)
-	`).Scan(&exists)
-	if err != nil {
-		return fmt.Errorf("failed to check if llm_output_language column exists: %v", err)
-	}
-
-	if !exists {
-		_, err = db.Exec(`
-			ALTER TABLE think_prompt
-			ADD COLUMN llm_output_language VARCHAR(10) NOT NULL DEFAULT 'en,uk'
-		`)
-		if err != nil {
-			return fmt.Errorf("failed to add llm_output_language column: %v", err)
-		}
-		fmt.Println("Added llm_output_language column to think_prompt table")
-	}
-
-	return nil
-}
 
 func (s *PostgresStore) Close() error {
 	return s.db.Close()
