@@ -87,7 +87,10 @@ jobs:
           echo "Updating package.json to version $NEW_VERSION_NUMBER"
           npm version $NEW_VERSION_NUMBER --no-git-tag-version
           
-          # Commit the version change
+          # Reset any changes to CHANGELOG.md that might have been made by semantic-release
+          git checkout HEAD -- CHANGELOG.md 2>/dev/null || true
+          
+          # Commit only the package.json version change
           git add package.json
           git commit -m "chore(release): $NEW_VERSION_NUMBER [skip ci]"
           
@@ -99,7 +102,7 @@ jobs:
           # Create GitHub release
           gh release create $NEXT_VERSION \
             --title "Release $NEXT_VERSION" \
-            --notes "Automated release $NEXT_VERSION" \
+            --notes "Automated release $NEXT_VERSION - resolved tag conflict" \
             --target main
           
           echo "Successfully created release $NEXT_VERSION"
