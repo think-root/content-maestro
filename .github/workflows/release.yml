@@ -2,6 +2,12 @@ name: Release content-maestro
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 2.2.0)'
+        required: true
+        type: string
+        default: '1.0.0'
 
 permissions:
   contents: write
@@ -32,9 +38,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Release
+      - name: Set version
+        run: |
+          echo "Setting version to ${{ github.event.inputs.version }}"
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
+      - name: Create Release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release --debug
+        run: |
+          git add package.json
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+          git tag "v${{ github.event.inputs.version }}"
+          git push origin main --tags
+          gh release create "v${{ github.event.inputs.version }}" \
+            --title "Release v${{ github.event.inputs.version }}" \
+            --notes "Release version ${{ github.event.inputs.version }}" \
+            --latest
