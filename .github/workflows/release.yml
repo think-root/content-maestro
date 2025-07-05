@@ -23,6 +23,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/think-root/content-maestro.git
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
