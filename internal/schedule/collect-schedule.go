@@ -20,6 +20,7 @@ type generateRequest struct {
 	SpokenLanguageCode string `json:"spoken_language_code"`
 	UseDirectURL       bool   `json:"use_direct_url"`
 	LlmProvider        string `json:"llm_provider"`
+	LlmOutputLanguage  string `json:"llm_output_language"`
 	LlmConfig          struct {
 		Model       string  `json:"model"`
 		Temperature float64 `json:"temperature"`
@@ -81,6 +82,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		SpokenLanguageCode: settings.SpokenLanguageCode,
 		UseDirectURL:       promptSettings.UseDirectURL,
 		LlmProvider:        promptSettings.LlmProvider,
+		LlmOutputLanguage:  promptSettings.LlmOutputLanguage,
 		LlmConfig: struct {
 			Model       string  `json:"model"`
 			Temperature float64 `json:"temperature"`
