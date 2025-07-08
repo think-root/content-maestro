@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/think-root/content-maestro/compare/v2.3.0...v2.3.1) (2025-07-06)
+
+
+### Bug Fixes
+
+* **schedule:** correct language selection logic for multi-API posting ([02edc0f](https://github.com/think-root/content-maestro/commit/02edc0f4f10d7661fbe77cdbc8b73129e6d83cd1))
+
 # [2.3.0](https://github.com/think-root/content-maestro/compare/v2.1.0...v2.2.0) (2025-07-05)
 
 
