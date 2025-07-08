@@ -35,3 +35,16 @@ apis:
     enabled: true
     response_type: "json"
     text_language: "uk"
+
+  bluesky:
+    url: "{env.BLUESKY_URL}/bluesky/api/posts/create"
+    method: "POST"
+    auth_type: "api_key"
+    token_env_var: "BLUESKY_SERVER_KEY"
+    token_header: "X-API-Key"
+    content_type: "multipart"
+    timeout: 30
+    success_code: 200
+    enabled: true
+    response_type: "json"
+    text_language: "en"
