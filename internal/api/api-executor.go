@@ -23,18 +23,19 @@ type APIConfig struct {
 }
 
 type APIEndpoint struct {
-	URL          string            `yaml:"url"`
-	Method       string            `yaml:"method"`
-	Headers      map[string]string `yaml:"headers"`
-	AuthType     string            `yaml:"auth_type"`
-	TokenEnvVar  string            `yaml:"token_env_var"`
-	TokenHeader  string            `yaml:"token_header"`
-	ContentType  string            `yaml:"content_type"`
-	Timeout      int               `yaml:"timeout"`
-	SuccessCode  int               `yaml:"success_code"`
-	Enabled      bool              `yaml:"enabled"`
-	ResponseType string            `yaml:"response_type"`
-	TextLanguage string            `yaml:"text_language"`
+	URL           string            `yaml:"url"`
+	Method        string            `yaml:"method"`
+	Headers       map[string]string `yaml:"headers"`
+	AuthType      string            `yaml:"auth_type"`
+	TokenEnvVar   string            `yaml:"token_env_var"`
+	TokenHeader   string            `yaml:"token_header"`
+	ContentType   string            `yaml:"content_type"`
+	Timeout       int               `yaml:"timeout"`
+	SuccessCode   int               `yaml:"success_code"`
+	Enabled       bool              `yaml:"enabled"`
+	ResponseType  string            `yaml:"response_type"`
+	TextLanguage  string            `yaml:"text_language"`
+	SocialifyImage bool             `yaml:"socialify_image"`
 }
 
 type RequestConfig struct {
@@ -73,6 +74,14 @@ func LoadAPIConfigs(configPath string) error {
 	config := &APIConfig{}
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	for name, endpoint := range config.APIs {
+		if endpoint.SocialifyImage {
+		} else {
+			endpoint.SocialifyImage = true
+		}
+		config.APIs[name] = endpoint
 	}
 
 	apiConfig = config
