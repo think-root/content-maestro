@@ -94,13 +94,6 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			break
 		}
 	}
-	
-	if image_name == "" {
-		log.Debug("No items found in repository for any language")
-		success = false
-		logMessage = "No items found in repository for any language"
-		return
-	}
 
 	var successfulAPIs []string
 	var failedAPIs []string

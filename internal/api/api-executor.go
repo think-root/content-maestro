@@ -76,14 +76,6 @@ func LoadAPIConfigs(configPath string) error {
 		return fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	for name, endpoint := range config.APIs {
-		if endpoint.SocialifyImage {
-		} else {
-			endpoint.SocialifyImage = true
-		}
-		config.APIs[name] = endpoint
-	}
-
 	apiConfig = config
 	return nil
 }
