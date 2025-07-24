@@ -9,6 +9,7 @@ apis:
     success_code: 200
     enabled: false
     response_type: "json"
+    socialify_image: false
 
   twitter:
     url: "{env.TWITTER_URL}/x/api/posts/create"
@@ -22,6 +23,7 @@ apis:
     enabled: true
     response_type: "json"
     text_language: "en"
+    socialify_image: false
 
   telegram:
     url: "{env.TELEGRAM_SERVER_URL}/telegram/send-message"
@@ -35,6 +37,7 @@ apis:
     enabled: true
     response_type: "json"
     text_language: "uk"
+    socialify_image: true
 
   bluesky:
     url: "{env.BLUESKY_URL}/bluesky/api/posts/create"
@@ -48,3 +51,4 @@ apis:
     enabled: true
     response_type: "json"
     text_language: "en"
+    socialify_image: false
