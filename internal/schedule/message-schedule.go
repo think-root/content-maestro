@@ -44,47 +44,55 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		return
 	}
 
-	// Створюємо зображення один раз для всіх API
-	// Для цього отримуємо перший доступний репозиторій
 	var image_name string
-	
+
+	needsImage := false
 	for _, endpoint := range api.GetAPIConfigs().APIs {
-		if !endpoint.Enabled {
-			continue
+		if endpoint.Enabled && endpoint.SocialifyImage {
+			needsImage = true
+			break
 		}
-		
-		textLanguage := endpoint.TextLanguage
-		if textLanguage == "" {
-			textLanguage = "en"
-		}
-		
-		repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
-		if err != nil {
-			log.Error("Error getting repository for language %s: %v", textLanguage, err)
-			continue
-		}
-		
-		if len(repo.Data.Items) == 0 {
-			log.Debug("No items found in repository for language %s", textLanguage)
-			continue
-		}
-		
-		item := repo.Data.Items[0]
-		username_repo := strings.TrimPrefix(item.URL, "https://github.com/")
-		image_name = "./tmp/gh_project_img/image.png"
-		
-		err = socialify.Socialify(username_repo)
-		if err != nil {
-			log.Error(err)
-			err := utils.CopyFile("./assets/banner.jpg", image_name)
-			if err != nil {
-				log.Error("Failed to copy file: %v", err)
-				success = false
-				logMessage = fmt.Sprintf("Failed to copy fallback banner file: %v", err)
-				return
+	}
+
+	if needsImage {
+		for _, endpoint := range api.GetAPIConfigs().APIs {
+			if !endpoint.Enabled || !endpoint.SocialifyImage {
+				continue
 			}
+
+			textLanguage := endpoint.TextLanguage
+			if textLanguage == "" {
+				textLanguage = "en"
+			}
+
+			repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
+			if err != nil {
+				log.Error("Error getting repository for language %s: %v", textLanguage, err)
+				continue
+			}
+
+			if len(repo.Data.Items) == 0 {
+				log.Debug("No items found in repository for language %s", textLanguage)
+				continue
+			}
+
+			item := repo.Data.Items[0]
+			username_repo := strings.TrimPrefix(item.URL, "https://github.com/")
+			image_name = "./tmp/gh_project_img/image.png"
+
+			err = socialify.Socialify(username_repo)
+			if err != nil {
+				log.Error(err)
+				err := utils.CopyFile("./assets/banner.jpg", image_name)
+				if err != nil {
+					log.Error("Failed to copy file: %v", err)
+					success = false
+					logMessage = fmt.Sprintf("Failed to copy fallback banner file: %v", err)
+					return
+				}
+			}
+			break
 		}
-		break
 	}
 	
 	if image_name == "" {
@@ -104,7 +112,6 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			continue
 		}
 
-		// Отримуємо текст для конкретної мови цього API
 		textLanguage := endpoint.TextLanguage
 		if textLanguage == "" {
 			textLanguage = "en"
@@ -127,7 +134,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		
 		item := repo.Data.Items[0]
 		if updatedURL == "" {
-			updatedURL = item.URL // Зберігаємо URL для оновлення статусу
+			updatedURL = item.URL
 		}
 		
 		var req api.RequestConfig
@@ -142,9 +149,12 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			req = api.RequestConfig{
 				APIName:    apiName,
 				FormFields: commonFields,
-				FileFields: map[string]string{
+			}
+
+			if endpoint.SocialifyImage && image_name != "" {
+				req.FileFields = map[string]string{
 					"image": image_name,
-				},
+				}
 			}
 		case "json":
 			req = api.RequestConfig{
