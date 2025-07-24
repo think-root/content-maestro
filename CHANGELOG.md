@@ -1,3 +1,13 @@
+# [2.4.0](https://github.com/think-root/content-maestro/compare/v2.3.1...v2.4.0) (2025-07-24)
+
+
+### Features
+
+* **api:** add socialify_image field to APIEndpoint struct ([65662a4](https://github.com/think-root/content-maestro/commit/65662a41a630932bf1b400f42dd06bc2315c4f5b))
+* **api:** introduce per-endpoint social image configuration ([57e1f87](https://github.com/think-root/content-maestro/commit/57e1f8719bd32e18c0b73e67dd2f3de9554c1cf9))
+* **config:** add bluesky api configuration ([0ef6a0b](https://github.com/think-root/content-maestro/commit/0ef6a0b441313ff52262c77c9fceef3aed5aec16))
+* **schedule:** optimize image generation for multi-API posting ([3b7cc4b](https://github.com/think-root/content-maestro/commit/3b7cc4b829930b2db989580d620d268ee795e732))
+
 ## [2.3.1](https://github.com/think-root/content-maestro/compare/v2.3.0...v2.3.1) (2025-07-06)
 
 
