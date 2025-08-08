@@ -1,3 +1,11 @@
+# [2.5.0](https://github.com/think-root/content-maestro/compare/v2.4.0...v2.5.0) (2025-08-08)
+
+
+### Features
+
+* **config:** add CONTENT_ALCHEMIST_TIMEOUT support ([09c9961](https://github.com/think-root/content-maestro/commit/09c99615629652ac9b0f0ed90c0ee72a5a94c6cf))
+* **config:** use CONTENT_ALCHEMIST_TIMEOUT for timeout ([8c67de5](https://github.com/think-root/content-maestro/commit/8c67de5b6ae435b37b5bb361440966136956380c))
+
 # [2.4.0](https://github.com/think-root/content-maestro/compare/v2.3.1...v2.4.0) (2025-07-24)
 
 
