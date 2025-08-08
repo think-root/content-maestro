@@ -8,11 +8,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-co-op/gocron"
 )
-
 
 type generateRequest struct {
 	MaxRepos           int    `json:"max_repos"`
@@ -38,14 +38,29 @@ type generateResponse struct {
 	ErrorMessage string   `json:"error_message"`
 }
 
+func getContentAlchemistTimeout() time.Duration {
+	timeoutStr := os.Getenv("CONTENT_ALCHEMIST_TIMEOUT")
+	if timeoutStr == "" {
+		return 5 * time.Minute
+	}
+
+	timeoutSeconds, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		log.Error("Invalid CONTENT_ALCHEMIST_TIMEOUT value: %s, using default 300 seconds", timeoutStr)
+		return 5 * time.Minute
+	}
+
+	return time.Duration(timeoutSeconds) * time.Second
+}
+
 func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("Collecting posts...")
-	
+
 	var success bool
 	var logMessage string
-	
+
 	defer func() {
-		
+
 		if r := recover(); r != nil {
 			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Collect job panic: %v", r)
@@ -54,7 +69,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 			}
 			panic(r)
 		}
-		
+
 		if err := store.LogCronExecution("collect", success, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
@@ -126,8 +141,11 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("CONTENT_ALCHEMIST_BEARER"))
 
+	timeout := getContentAlchemistTimeout()
+	log.Debugf("Using timeout of %v for content-alchemist API call", timeout)
+
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: timeout,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
