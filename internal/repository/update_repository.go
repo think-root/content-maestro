@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type updateResponse struct {
@@ -15,18 +17,35 @@ type updateResponse struct {
 }
 
 var (
-	client           = &http.Client{}
+	client           *http.Client
 	updatePostedUrl  string
 	getRepositoryUrl string
 	bearerToken      string
 	once             sync.Once
 )
 
+func getContentAlchemistTimeout() time.Duration {
+	timeoutStr := os.Getenv("CONTENT_ALCHEMIST_TIMEOUT")
+	if timeoutStr == "" {
+		return 30 * time.Second
+	}
+
+	timeoutSeconds, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		return 30 * time.Second
+	}
+
+	return time.Duration(timeoutSeconds) * time.Second
+}
+
 func init() {
 	once.Do(func() {
 		updatePostedUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/update-posted/"
 		getRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/get-repository/"
 		bearerToken = "Bearer " + os.Getenv("CONTENT_ALCHEMIST_BEARER")
+		client = &http.Client{
+			Timeout: getContentAlchemistTimeout(),
+		}
 	})
 }
 
