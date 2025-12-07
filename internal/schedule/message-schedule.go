@@ -13,15 +13,14 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-
 func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("cron job started")
-	
+
 	var success bool
 	var logMessage string
-	
+
 	defer func() {
-		
+
 		if r := recover(); r != nil {
 			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Message job panic: %v", r)
@@ -30,7 +29,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			}
 			panic(r)
 		}
-		
+
 		if err := store.LogCronExecution("message", success, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
@@ -109,7 +108,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		if textLanguage == "" {
 			textLanguage = "en"
 		}
-		
+
 		repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
 		if err != nil {
 			log.Error("Error getting repository for %s API with language %s: %v", apiName, textLanguage, err)
@@ -117,19 +116,66 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			errorMessages = append(errorMessages, fmt.Sprintf("%s API error (language %s): %v", apiName, textLanguage, err))
 			continue
 		}
-		
+
 		if len(repo.Data.Items) == 0 {
 			log.Debug("No items found in repository for %s API with language %s", apiName, textLanguage)
 			failedAPIs = append(failedAPIs, apiName)
 			errorMessages = append(errorMessages, fmt.Sprintf("%s API error: no items for language %s", apiName, textLanguage))
 			continue
 		}
-		
+
 		item := repo.Data.Items[0]
+
+		// Validate repository URL before publishing
+		for {
+			statusCode, err := repository.ValidateRepositoryURL(item.URL)
+			if err != nil {
+				log.Error("Error validating repository URL %s: %v", item.URL, err)
+				// Continue with publishing if validation request fails
+				break
+			}
+
+			if statusCode == 200 {
+				// Repository is valid, proceed with publishing
+				log.Debug("Repository %s is valid (status %d)", item.URL, statusCode)
+				break
+			}
+
+			// Repository is not accessible, delete and get next
+			log.Debug("Repository %s returned status %d, deleting and getting next", item.URL, statusCode)
+
+			if _, err := repository.DeleteRepository(item.URL); err != nil {
+				log.Error("Error deleting repository %s: %v", item.URL, err)
+			}
+
+			// Get next repository
+			repo, err = repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
+			if err != nil {
+				log.Error("Error getting next repository for %s API: %v", apiName, err)
+				failedAPIs = append(failedAPIs, apiName)
+				errorMessages = append(errorMessages, fmt.Sprintf("%s API error: failed to get next repository: %v", apiName, err))
+				break
+			}
+
+			if len(repo.Data.Items) == 0 {
+				log.Debug("No more valid repositories available for %s API", apiName)
+				failedAPIs = append(failedAPIs, apiName)
+				errorMessages = append(errorMessages, fmt.Sprintf("%s API error: no valid repositories available", apiName))
+				break
+			}
+
+			item = repo.Data.Items[0]
+		}
+
+		// Skip this API if no valid repository was found
+		if len(repo.Data.Items) == 0 {
+			continue
+		}
+
 		if updatedURL == "" {
 			updatedURL = item.URL
 		}
-		
+
 		var req api.RequestConfig
 
 		commonFields := map[string]string{
@@ -207,7 +253,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 func MessageCron(store store.StoreInterface) *gocron.Scheduler {
 	s := gocron.NewScheduler(time.UTC)
-	
+
 	setting, err := store.GetCronSetting("message")
 	if err != nil || setting == nil || !setting.IsActive {
 		log.Debug("Message cron is disabled")
