@@ -10,6 +10,9 @@ apis:
     enabled: false
     response_type: "json"
     socialify_image: false
+    default_json_body:
+      type: "chat"
+      jid: "{env.WAPP_JID}"
 
   twitter:
     url: "{env.TWITTER_URL}/x/api/posts/create"
