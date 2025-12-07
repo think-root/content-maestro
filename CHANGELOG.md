@@ -1,3 +1,15 @@
+# [2.6.0](https://github.com/think-root/content-maestro/compare/v2.5.0...v2.6.0) (2025-12-07)
+
+
+### Bug Fixes
+
+* **schedule:** add repository URL validation ([4baee51](https://github.com/think-root/content-maestro/commit/4baee510b3732a1cb729ce9a4c9e2d9b47ff6721))
+
+
+### Features
+
+* **repository:** add repository validation and deletion ([580797c](https://github.com/think-root/content-maestro/commit/580797c96aa22759ae57255f213fc3017c82031c))
+
 # [2.5.0](https://github.com/think-root/content-maestro/compare/v2.4.0...v2.5.0) (2025-08-08)
 
 
