@@ -1,6 +1,7 @@
 package api
 
 import (
+	"maps"
 	"bytes"
 	"content-maestro/internal/logger"
 	"encoding/json"
@@ -23,19 +24,20 @@ type APIConfig struct {
 }
 
 type APIEndpoint struct {
-	URL           string            `yaml:"url"`
-	Method        string            `yaml:"method"`
-	Headers       map[string]string `yaml:"headers"`
-	AuthType      string            `yaml:"auth_type"`
-	TokenEnvVar   string            `yaml:"token_env_var"`
-	TokenHeader   string            `yaml:"token_header"`
-	ContentType   string            `yaml:"content_type"`
-	Timeout       int               `yaml:"timeout"`
-	SuccessCode   int               `yaml:"success_code"`
-	Enabled       bool              `yaml:"enabled"`
-	ResponseType  string            `yaml:"response_type"`
-	TextLanguage  string            `yaml:"text_language"`
-	SocialifyImage bool             `yaml:"socialify_image"`
+	URL             string            `yaml:"url"`
+	Method          string            `yaml:"method"`
+	Headers         map[string]string `yaml:"headers"`
+	AuthType        string            `yaml:"auth_type"`
+	TokenEnvVar     string            `yaml:"token_env_var"`
+	TokenHeader     string            `yaml:"token_header"`
+	ContentType     string            `yaml:"content_type"`
+	Timeout         int               `yaml:"timeout"`
+	SuccessCode     int               `yaml:"success_code"`
+	Enabled         bool              `yaml:"enabled"`
+	ResponseType    string            `yaml:"response_type"`
+	TextLanguage    string            `yaml:"text_language"`
+	SocialifyImage  bool              `yaml:"socialify_image"`
+	DefaultJSONBody map[string]string `yaml:"default_json_body"`
 }
 
 type RequestConfig struct {
@@ -103,26 +105,35 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 		}
 	}
 
-	if strings.Contains(url, "{env.") {
-		for _, envVar := range extractEnvVarsFromString(url) {
-			url = strings.Replace(url, fmt.Sprintf("{env.%s}", envVar), os.Getenv(envVar), -1)
-		}
-	}
+	url = replaceEnvVars(url)
 
 	var body io.Reader
 	var contentType string
 
+	defaultJSONBody := resolveDefaultJSONBody(apiEndpoint.DefaultJSONBody)
+
 	switch apiEndpoint.ContentType {
 	case "json":
-		if reqConfig.JSONBody != nil {
-			jsonData, err := json.Marshal(reqConfig.JSONBody)
+		if reqConfig.RawBody != nil {
+			body = bytes.NewBuffer(reqConfig.RawBody)
+			contentType = "application/json"
+			break
+		}
+
+		mergedJSONBody := map[string]any{}
+
+		maps.Copy(mergedJSONBody, defaultJSONBody)
+
+		for key, value := range reqConfig.JSONBody {
+			mergedJSONBody[key] = value
+		}
+
+		if len(mergedJSONBody) > 0 {
+			jsonData, err := json.Marshal(mergedJSONBody)
 			if err != nil {
 				return nil, fmt.Errorf("failed to marshal JSON body: %w", err)
 			}
 			body = bytes.NewBuffer(jsonData)
-			contentType = "application/json"
-		} else if reqConfig.RawBody != nil {
-			body = bytes.NewBuffer(reqConfig.RawBody)
 			contentType = "application/json"
 		}
 	case "multipart":
@@ -170,12 +181,7 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 	}
 
 	for key, value := range apiEndpoint.Headers {
-		if strings.Contains(value, "{env.") {
-			for _, envVar := range extractEnvVarsFromString(value) {
-				value = strings.Replace(value, fmt.Sprintf("{env.%s}", envVar), os.Getenv(envVar), -1)
-			}
-		}
-		req.Header.Set(key, value)
+		req.Header.Set(key, replaceEnvVars(value))
 	}
 
 	switch apiEndpoint.AuthType {
@@ -258,4 +264,24 @@ func extractEnvVarsFromString(input string) []string {
 	}
 
 	return envVars
+}
+
+func replaceEnvVars(input string) string {
+	if !strings.Contains(input, "{env.") {
+		return input
+	}
+
+	for _, envVar := range extractEnvVarsFromString(input) {
+		input = strings.Replace(input, fmt.Sprintf("{env.%s}", envVar), os.Getenv(envVar), -1)
+	}
+
+	return input
+}
+
+func resolveDefaultJSONBody(defaults map[string]string) map[string]any {
+	resolved := map[string]any{}
+	for key, value := range defaults {
+		resolved[key] = replaceEnvVars(value)
+	}
+	return resolved
 }
