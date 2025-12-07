@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -53,10 +55,19 @@ apis:
 }
 
 func TestExecuteRequest(t *testing.T) {
+	var lastBody map[string]any
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-token" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
+		}
+
+		bodyBytes, _ := io.ReadAll(r.Body)
+		if len(bodyBytes) > 0 {
+			_ = json.Unmarshal(bodyBytes, &lastBody)
+		} else {
+			lastBody = nil
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -77,18 +88,24 @@ func TestExecuteRequest(t *testing.T) {
 				SuccessCode:  200,
 				Enabled:      true,
 				ResponseType: "json",
+				DefaultJSONBody: map[string]string{
+					"default_field": "{env.EXTRA_VALUE}",
+				},
 			},
 		},
 	}
 
 	os.Setenv("API_TOKEN", "test-token")
 	defer os.Unsetenv("API_TOKEN")
+	os.Setenv("EXTRA_VALUE", "from-env")
+	defer os.Unsetenv("EXTRA_VALUE")
 
 	tests := []struct {
 		name        string
 		reqConfig   RequestConfig
 		wantStatus  int
 		wantSuccess bool
+		wantBody    map[string]any
 	}{
 		{
 			name: "successful request",
@@ -98,6 +115,10 @@ func TestExecuteRequest(t *testing.T) {
 			},
 			wantStatus:  200,
 			wantSuccess: true,
+			wantBody: map[string]any{
+				"test":          "data",
+				"default_field": "from-env",
+			},
 		},
 		{
 			name: "disabled api",
@@ -110,6 +131,8 @@ func TestExecuteRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			lastBody = nil
+
 			resp, err := ExecuteRequest(tt.reqConfig)
 			if tt.wantSuccess {
 				if err != nil {
@@ -118,6 +141,9 @@ func TestExecuteRequest(t *testing.T) {
 				}
 				if resp.StatusCode != tt.wantStatus {
 					t.Errorf("ExecuteRequest() status = %v, want %v", resp.StatusCode, tt.wantStatus)
+				}
+				if tt.wantBody != nil && !reflect.DeepEqual(lastBody, tt.wantBody) {
+					t.Errorf("ExecuteRequest() body = %+v, want %+v", lastBody, tt.wantBody)
 				}
 			} else if err == nil {
 				t.Error("ExecuteRequest() expected error, got nil")
