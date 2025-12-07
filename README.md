@@ -48,24 +48,27 @@ go mod download
 
 Create a **.env** file in the app root directory:
 
-| Variable                 | Description                                                                                               |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| CONTENT_ALCHEMIST_BEARER | The token you created when deploying [content-alchemist](https://github.com/think-root/content-alchemist) |
-| CONTENT_ALCHEMIST_URL    | The URL of the content-alchemist server, e.g., http://localhost:8080                                      |
-| TWITTER_API_KEY          | Your API key for integration with [Twitter](https://github.com/think-root/x-connector)                    |
-| TWITTER_URL              | The server URL, e.g., http://localhost:8080                                                               |
-| WAPP_TOKEN               | Your API key for integration with [WhatsApp](https://github.com/think-root/whatsapp-connector)            |
-| WAPP_JID                 | WhatsApp Channel ID                                                                                       |
-| WAPP_SERVER_URL          | The URL of the WhatsApp integration server, e.g., http://localhost:8080                                   |
-| TELEGRAM_SERVER_URL      | The URL of the Telegram integration server, e.g., http://localhost:8080                                   |
-| TELEGRAM_SERVER_TOKEN    | Your API key for integration with [Telegram](https://github.com/think-root/telegram-connector)            |
-| API_TOKEN                | Authentication token for the API server                                                                   |
-| API_PORT                 | Port for the API server (default: 8080)                                                                   |
-| POSTGRES_HOST            | PostgreSQL database host (default: localhost)                                                             |
-| POSTGRES_PORT            | PostgreSQL database port (default: 5432)                                                                  |
-| POSTGRES_USER            | PostgreSQL database username                                                                               |
-| POSTGRES_PASSWORD        | PostgreSQL database password                                                                               |
-| POSTGRES_DB              | PostgreSQL database name                                                                                   |
+| Variable                  | Required                     | Description |
+| ------------------------- | ---------------------------- | ----------- |
+| API_TOKEN                 | Yes                          | Bearer token checked by the API middleware; requests return an error without it. |
+| API_PORT                  | No (default: 8080)           | Port for the API server. |
+| POSTGRES_HOST             | Yes                          | PostgreSQL host (app exits if missing). |
+| POSTGRES_PORT             | Yes                          | PostgreSQL port (app exits if missing). |
+| POSTGRES_USER             | Yes                          | PostgreSQL username (app exits if missing). |
+| POSTGRES_PASSWORD         | No                           | PostgreSQL password (needed if your DB requires it). |
+| POSTGRES_DB               | Yes                          | PostgreSQL database name (app exits if missing). |
+| CONTENT_ALCHEMIST_URL     | Yes                          | Base URL for content-alchemist endpoints used by collectors and message jobs. |
+| CONTENT_ALCHEMIST_BEARER  | Yes                          | Bearer token for content-alchemist requests. |
+| CONTENT_ALCHEMIST_TIMEOUT | No (default: 300s collect / 30s repo) | Timeout in seconds for content-alchemist calls. |
+| TWITTER_URL               | Yes (enabled by default)     | URL of the Twitter/X connector server. |
+| TWITTER_API_KEY           | Yes (enabled by default)     | API key header for the Twitter/X connector. |
+| TELEGRAM_SERVER_URL       | Yes (enabled by default)     | URL of the Telegram connector server. |
+| TELEGRAM_SERVER_TOKEN     | Yes (enabled by default)     | API key header for the Telegram connector. |
+| BLUESKY_URL               | Yes (enabled by default)     | URL of the Bluesky connector server. |
+| BLUESKY_SERVER_KEY        | Yes (enabled by default)     | API key header for the Bluesky connector. |
+| WAPP_SERVER_URL           | Only if enabling WhatsApp    | URL of the WhatsApp connector server (disabled by default in `apis-config.yml`). |
+| WAPP_TOKEN                | Only if enabling WhatsApp    | API key for the WhatsApp connector. |
+| WAPP_JID                  | Only if enabling WhatsApp    | Target WhatsApp chat/channel JID for `/wapp/send-message`. |
 
 > [!WARNING]
 > WhatsApp integration is unofficial and may risk account suspension
@@ -103,6 +106,7 @@ Each API configuration contains the following fields:
 - `success_code`: Expected HTTP success response code
 - `enabled`: Boolean flag to enable/disable the API
 - `response_type`: Expected response format
+- `default_json_body`: Optional key/value pairs always added to JSON requests (supports `{env.VAR}` interpolation)
 
 ### Supported APIs
 
@@ -112,6 +116,7 @@ Currently configured APIs:
 
 - Uses bearer token authentication
 - JSON content type
+- Sends `type` and `jid` fields via `default_json_body` (JID from `WAPP_JID`)
 - Currently disabled by default
 
 **Twitter**
@@ -125,15 +130,6 @@ Currently configured APIs:
 - Uses API key authentication via X-API-Key header
 - Multipart content type
 - Enabled by default
-
-### Environment Variables Required
-
-- `WAPP_SERVER_URL`
-- `WAPP_TOKEN`
-- `TWITTER_URL`
-- `TWITTER_API_KEY`
-- `TELEGRAM_SERVER_URL`
-- `TELEGRAM_SERVER_TOKEN`
 
 ## API Documentation
 
