@@ -1,3 +1,16 @@
+# [2.7.0](https://github.com/think-root/content-maestro/compare/v2.6.0...v2.7.0) (2025-12-31)
+
+
+### Bug Fixes
+
+* **api:** temporarily disable Twitter API integration ([4fd19b0](https://github.com/think-root/content-maestro/commit/4fd19b0a58e3d4e0d2b67004ba7f71668006a4b0))
+
+
+### Features
+
+* **api:** add default json body config ([64f858a](https://github.com/think-root/content-maestro/commit/64f858a812a875b4e5e1c30707e263ae8219a00e))
+* **api:** add default json body merging and env helpers ([5133e56](https://github.com/think-root/content-maestro/commit/5133e564a456a83ad4fe928d4a7e91873cd407ef))
+
 # [2.6.0](https://github.com/think-root/content-maestro/compare/v2.5.0...v2.6.0) (2025-12-07)
 
 
