@@ -1,26 +1,27 @@
-# API Reference
+# API
 
-The application provides a comprehensive REST API for managing cron jobs, repository collection settings, prompt settings, and cron job history.
+> [!IMPORTANT]
+> All API requests must include an Authorization header in the following format:
+> Authorization: Bearer <API_TOKEN>
+>
+> All endpoints return JSON responses with appropriate HTTP status codes
 
-## Authentication
+### /api/crons
 
-All API endpoints are protected with Bearer token authentication. You need to provide the `API_TOKEN` in the request header:
+**Endpoint:** `/api/crons`
+
+**Method:** `GET`
+
+**Description:** Returns the current settings for all cron jobs.
+
+**Curl Example:**
 
 ```bash
-Authorization: Bearer your_api_token
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/crons
 ```
 
-## Cron Job Management
-
-### Get All Cron Settings
-
-```http
-GET /api/crons
-```
-
-Returns the current settings for all cron jobs.
-
-**Response example:**
+**Response Example:**
 
 ```json
 [
@@ -39,18 +40,32 @@ Returns the current settings for all cron jobs.
 ]
 ```
 
-### Update Cron Schedule
+### /api/crons/{name}/schedule
 
-```http
-PUT /api/crons/{name}/schedule
+**Endpoint:** `/api/crons/{name}/schedule`
+
+**Method:** `PUT`
+
+**Description:** Update the schedule for a specific cron job. The `name` can be either `collect` or `message`.
+
+**Curl Example:**
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"schedule": "0 15 * * 6"}' \
+  http://localhost:8080/api/crons/collect/schedule
 ```
 
-Update the schedule for a specific cron job. The `name` can be either `collect` or `message`.
+**Request Parameters:**
 
-**Parameters:**
-- `name` (path): Cron job name (`collect` or `message`)
+| Parameter  | Type   | Required | Description                                   |
+| ---------- | ------ | -------- | --------------------------------------------- |
+| `name`     | string | Yes      | Cron job name (`collect` or `message`)        |
+| `schedule` | string | Yes      | Cron schedule expression (e.g., `0 15 * * 6`) |
 
-**Request body:**
+**Request Example:**
 
 ```json
 {
@@ -58,7 +73,7 @@ Update the schedule for a specific cron job. The `name` can be either `collect` 
 }
 ```
 
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -67,18 +82,32 @@ Update the schedule for a specific cron job. The `name` can be either `collect` 
 }
 ```
 
-### Update Cron Status
+### /api/crons/{name}/status
 
-```http
-PUT /api/crons/{name}/status
+**Endpoint:** `/api/crons/{name}/status`
+
+**Method:** `PUT`
+
+**Description:** Enable or disable a specific cron job. The `name` can be either `collect` or `message`.
+
+**Curl Example:**
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"is_active": true}' \
+  http://localhost:8080/api/crons/collect/status
 ```
 
-Enable or disable a specific cron job. The `name` can be either `collect` or `message`.
+**Request Parameters:**
 
-**Parameters:**
-- `name` (path): Cron job name (`collect` or `message`)
+| Parameter   | Type    | Required | Description                              |
+| ----------- | ------- | -------- | ---------------------------------------- |
+| `name`      | string  | Yes      | Cron job name (`collect` or `message`)   |
+| `is_active` | boolean | Yes      | Enable (true) or disable (false) the job |
 
-**Request body:**
+**Request Example:**
 
 ```json
 {
@@ -86,7 +115,7 @@ Enable or disable a specific cron job. The `name` can be either `collect` or `me
 }
 ```
 
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -95,17 +124,22 @@ Enable or disable a specific cron job. The `name` can be either `collect` or `me
 }
 ```
 
-## Repository Collection Settings
+### /api/collect-settings
 
-### Get Collect Settings
+**Endpoint:** `/api/collect-settings`
 
-```http
-GET /api/collect-settings
+**Method:** `GET`
+
+**Description:** Returns the current settings for repository collection.
+
+**Curl Example:**
+
+```bash
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/collect-settings
 ```
 
-Returns the current settings for repository collection.
-
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -115,15 +149,37 @@ Returns the current settings for repository collection.
 }
 ```
 
-### Update Collect Settings
+### /api/collect-settings (update)
 
-```http
-PUT /api/collect-settings
+**Endpoint:** `/api/collect-settings`
+
+**Method:** `PUT`
+
+**Description:** Update the repository collection settings.
+
+**Curl Example:**
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "max_repos": 10,
+    "since": "weekly",
+    "spoken_language_code": "uk"
+  }' \
+  http://localhost:8080/api/collect-settings
 ```
 
-Update the repository collection settings.
+**Request Parameters:**
 
-**Request body:**
+| Parameter              | Type    | Required | Description                                                        |
+| ---------------------- | ------- | -------- | ------------------------------------------------------------------ |
+| `max_repos`            | integer | No       | Maximum number of repositories to collect                          |
+| `since`                | string  | No       | Time period for collection (`daily`, `weekly`, `monthly`)          |
+| `spoken_language_code` | string  | No       | Language code for content (e.g., `en`, `uk`, `es`)                 |
+
+**Request Example:**
 
 ```json
 {
@@ -133,12 +189,7 @@ Update the repository collection settings.
 }
 ```
 
-**Parameters:**
-- `max_repos` (integer): Maximum number of repositories to collect
-- `since` (string): Time period for collection (`daily`, `weekly`, `monthly`)
-- `spoken_language_code` (string): Language code for content (e.g., `en`, `uk`, `es`)
-
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -147,17 +198,22 @@ Update the repository collection settings.
 }
 ```
 
-## Prompt Settings
+### /api/prompt-settings
 
-### Get Prompt Settings
+**Endpoint:** `/api/prompt-settings`
 
-```http
-GET /api/prompt-settings
+**Method:** `GET`
+
+**Description:** Returns the current AI prompt settings used for content generation.
+
+**Curl Example:**
+
+```bash
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/prompt-settings
 ```
 
-Returns the current AI prompt settings used for content generation.
-
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -170,15 +226,41 @@ Returns the current AI prompt settings used for content generation.
 }
 ```
 
-### Update Prompt Settings
+### /api/prompt-settings/update
 
-```http
-POST /api/prompt-settings/update
+**Endpoint:** `/api/prompt-settings/update`
+
+**Method:** `POST`
+
+**Description:** Update the AI prompt settings for content generation.
+
+**Curl Example:**
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "use_direct_url": false,
+    "llm_provider": "anthropic",
+    "temperature": 0.8,
+    "model": "anthropic/claude-3-sonnet",
+    "content": "You are an expert technical writer specializing in open-source projects."
+  }' \
+  http://localhost:8080/api/prompt-settings/update
 ```
 
-Update the AI prompt settings for content generation.
+**Request Parameters:**
 
-**Request body:**
+| Parameter        | Type    | Required | Description                                                                              |
+| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
+| `use_direct_url` | boolean | No       | Whether to use direct URL for LLM API calls                                              |
+| `llm_provider`   | string  | No       | LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)        |
+| `temperature`    | float   | No       | Controls randomness in AI responses (0.0-2.0)                                            |
+| `model`          | string  | No       | The AI model to use for content generation                                               |
+| `content`        | string  | No       | The prompt content/template for AI generation                                            |
+
+**Request Example:**
 
 ```json
 {
@@ -190,14 +272,7 @@ Update the AI prompt settings for content generation.
 }
 ```
 
-**Parameters:**
-- `use_direct_url` (boolean, optional): Whether to use direct URL for LLM API calls
-- `llm_provider` (string, optional): LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)
-- `temperature` (float, optional): Controls randomness in AI responses (0.0-2.0)
-- `model` (string, optional): The AI model to use for content generation
-- `content` (string, optional): The prompt content/template for AI generation
-
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -206,27 +281,34 @@ Update the AI prompt settings for content generation.
 }
 ```
 
-## Cron Job History
+### /api/cron-history
 
-### Get Cron Job History
+**Endpoint:** `/api/cron-history`
 
-```http
-GET /api/cron-history
+**Method:** `GET`
+
+**Description:** Retrieve the history of cron job executions with pagination, sorting, and filtering.
+
+**Curl Example:**
+
+```bash
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  "http://localhost:8080/api/cron-history?name=collect&page=1&limit=10"
 ```
 
-Retrieve the history of cron job executions with pagination, sorting, and filtering.
+**Request Parameters:**
 
-**Query parameters:**
+| Parameter    | Type    | Required | Description                                                                  |
+| ------------ | ------- | -------- | ---------------------------------------------------------------------------- |
+| `name`       | string  | No       | Filter by cron job name (`collect` or `message`)                             |
+| `page`       | integer | No       | Page number (default: 1)                                                     |
+| `limit`      | integer | No       | Number of records per page (default: 20)                                     |
+| `sort`       | string  | No       | Sort order by execution date (`asc` or `desc`, default: `desc`)              |
+| `success`    | boolean | No       | Filter by execution status (`true` or `false`)                               |
+| `start_date` | string  | No       | Filter records from this date onwards (format: `YYYY-MM-DD` or RFC3339)      |
+| `end_date`   | string  | No       | Filter records up to this date (format: `YYYY-MM-DD` or RFC3339)             |
 
-- `name` (optional): Filter by cron job name (`collect` or `message`)
-- `page` (optional): Page number (default: 1)
-- `limit` (optional): Number of records per page (default: 20)
-- `sort` (optional): Sort order by execution date (`asc` or `desc`, default: `desc`)
-- `success` (optional): Filter by execution status (`true` or `false`)
-- `start_date` (optional): Filter records from this date onwards (format: `YYYY-MM-DD` or RFC3339)
-- `end_date` (optional): Filter records up to this date (format: `YYYY-MM-DD` or RFC3339)
-
-**Response format:**
+**Response Structure:**
 
 The API returns a paginated response with the following structure:
 
@@ -238,7 +320,7 @@ The API returns a paginated response with the following structure:
   - `has_next`: Boolean indicating if there's a next page
   - `has_previous`: Boolean indicating if there's a previous page
 
-**Response example:**
+**Response Example:**
 
 ```json
 {
@@ -266,68 +348,68 @@ The API returns a paginated response with the following structure:
 }
 ```
 
-**Example Usage:**
+**Usage Examples:**
 
 1. Get all history (default: newest first, 20 records per page):
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   http://localhost:8080/api/cron-history
 ```
 
 2. Get history for specific job with custom pagination:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=collect&page=1&limit=10"
 ```
 
 3. Get only failed executions sorted by oldest first:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?success=false&sort=asc&limit=5"
 ```
 
 4. Get message job history with pagination and newest first sorting:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=message&page=2&limit=15&sort=desc"
 ```
 
 5. Get second page of all executions with 10 records per page:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?page=2&limit=10"
 ```
 
 6. Get history for a specific date range (from March 1st to March 15th, 2024):
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?start_date=2024-03-01&end_date=2024-03-15"
 ```
 
 7. Get failed executions from the last week:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?success=false&start_date=2024-03-08"
 ```
 
 8. Get collect job history for a specific date with precise timestamps:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=collect&start_date=2024-03-15T00:00:00Z&end_date=2024-03-15T23:59:59Z"
 ```
 
 9. Get recent executions from the last 3 days, sorted oldest first:
 
 ```bash
-curl -H "Authorization: Bearer your_api_token" \
+curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?start_date=2024-03-12&sort=asc"
 ```
 
@@ -347,79 +429,10 @@ curl -H "Authorization: Bearer your_api_token" \
   - All timestamps are stored and compared in UTC
   - When using date-only format, the date is interpreted as the start of the day in UTC
 
-## Example Usage
+**Status Codes:**
 
-1. Get all cron settings:
+- 200: Success
+- 400: Bad Request - Invalid parameters or date validation errors
+- 401: Unauthorized - Invalid or missing Bearer token
+- 500: Internal Server Error - Database or server error
 
-```bash
-curl -H "Authorization: Bearer your_api_token" \
-  http://localhost:8080/api/crons
-```
-
-2. Update collect schedule:
-
-```bash
-curl -X PUT \
-  -H "Authorization: Bearer your_api_token" \
-  -H "Content-Type: application/json" \
-  -d '{"schedule": "0 15 * * 6"}' \
-  http://localhost:8080/api/crons/collect/schedule
-```
-
-3. Enable collect cron:
-
-```bash
-curl -X PUT \
-  -H "Authorization: Bearer your_api_token" \
-  -H "Content-Type: application/json" \
-  -d '{"is_active": true}' \
-  http://localhost:8080/api/crons/collect/status
-```
-
-4. Get collect settings:
-
-```bash
-curl -H "Authorization: Bearer your_api_token" \
-  http://localhost:8080/api/collect-settings
-```
-
-5. Update collect settings:
-
-```bash
-curl -X PUT \
-  -H "Authorization: Bearer your_api_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "max_repos": 10,
-    "since": "weekly",
-    "spoken_language_code": "uk"
-  }' \
-  http://localhost:8080/api/collect-settings
-```
-
-6. Get prompt settings:
-
-```bash
-curl -H "Authorization: Bearer your_api_token" \
-  http://localhost:8080/api/prompt-settings
-```
-
-7. Update prompt settings:
-
-```bash
-curl -X POST \
-  -H "Authorization: Bearer your_api_token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "use_direct_url": false,
-    "llm_provider": "anthropic",
-    "temperature": 0.8,
-    "model": "anthropic/claude-3-sonnet",
-    "content": "You are an expert technical writer specializing in open-source projects."
-  }' \
-  http://localhost:8080/api/prompt-settings/update
-```
-
-## Data Persistence
-
-All settings are stored in PostgreSQL database. The data is persisted in the configured PostgreSQL instance. When running in Docker, make sure to configure the database connection properly using the environment variables specified in the configuration section.
