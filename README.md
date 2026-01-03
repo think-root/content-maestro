@@ -9,8 +9,6 @@
 [![Version](https://img.shields.io/github/v/release/think-root/content-maestro?style=flat-square&color=blue)](https://github.com/think-root/content-maestro/releases)
 [![Changelog](https://img.shields.io/badge/changelog-view-blue?style=flat-square)](CHANGELOG.md)
 
-<!-- ![Coverage](https://img.shields.io/badge/Coverage-28%25-red.svg) -->
-
 <img src="baner.png" alt="baner">
 
 </div>
@@ -70,9 +68,6 @@ Create a **.env** file in the app root directory:
 | WAPP_TOKEN                | Only if enabling WhatsApp    | API key for the WhatsApp connector. |
 | WAPP_JID                  | Only if enabling WhatsApp    | Target WhatsApp chat/channel JID for `/wapp/send-message`. |
 
-> [!WARNING]
-> WhatsApp integration is unofficial and may risk account suspension
-
 ### Run the app
 
 ```bash
@@ -88,15 +83,15 @@ go build -o content-maestro ./cmd/main.go
 ./content-maestro
 ```
 
-## APIs integration config
+## External APIs Integration
 
-The [apis-config.yml](internal/api/apis-config.yml) file contains configuration settings for various messaging APIs used by the content-maestro service.
+Content Maestro integrates with various external platforms (Twitter/X, Telegram, Bluesky, WhatsApp). The [apis-config.yml](internal/api/apis-config.yml) file contains configuration settings for these external APIs.
 
-### Structure
+### Configuration Structure
 
 Each API configuration contains the following fields:
 
-- `url`: The endpoint URL with environment variable support
+- `url`: The endpoint URL with environment variable support (uses `{env.VAR}` syntax)
 - `method`: HTTP method for the request
 - `auth_type`: Authentication type ("bearer" or "api_key")
 - `token_env_var`: Environment variable name containing the auth token
@@ -106,34 +101,13 @@ Each API configuration contains the following fields:
 - `success_code`: Expected HTTP success response code
 - `enabled`: Boolean flag to enable/disable the API
 - `response_type`: Expected response format
+- `socialify_image`: Boolean flag to enable/disable socialify image generation for this API
+- `text_language`: Optional language code for text content (e.g., "en", "uk")
 - `default_json_body`: Optional key/value pairs always added to JSON requests (supports `{env.VAR}` interpolation)
 
-### Supported APIs
+## Application API
 
-Currently configured APIs:
-
-**WhatsApp**
-
-- Uses bearer token authentication
-- JSON content type
-- Sends `type` and `jid` fields via `default_json_body` (JID from `WAPP_JID`)
-- Currently disabled by default
-
-**Twitter**
-
-- Uses API key authentication via X-API-Key header
-- Multipart content type
-- Enabled by default
-
-**Telegram**
-
-- Uses API key authentication via X-API-Key header
-- Multipart content type
-- Enabled by default
-
-## API Documentation
-
-For detailed API documentation, including endpoints, authentication, and usage examples, see [API Documentation](api_docs.md).
+Content Maestro exposes its own REST API for managing jobs, schedules, and settings. For detailed documentation of the application's API endpoints, authentication, and usage examples, see [API Documentation](api_docs.md).
 
 ## License
 
