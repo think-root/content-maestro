@@ -17,6 +17,10 @@
 
 Helper app for [content-alchemist](https://github.com/think-root/content-alchemist) that manages content like a skilled maestro. Essentially, it makes scheduled requests to various integrations (such as [telegram-connector](https://github.com/think-root/telegram-connector) or [x-connector](https://github.com/think-root/x-connector)) using a convenient [config](internal/api/apis-config.yml). It also prepares posts for publication by generating images with information about the repository using [socialify](https://github.com/wei/socialify) and makes scheduled requests to the API method of [content-alchemist](https://github.com/think-root/content-alchemist), which [automatically generates](https://github.com/think-root/content-alchemist?tab=readme-ov-file#apiauto-generate) new posts.
 
+### SQLite Migration (v3.0.0+)
+
+Starting from version **3.0.0**, the application migrated from PostgreSQL to **SQLite** for simpler deployment and reduced infrastructure requirements. The migration is handled automatically by [`internal/store/migration.go`](internal/store/migration.go) — on startup, the app detects if a PostgreSQL instance is available and seamlessly migrates all data (cron settings, history, collect settings, prompt configuration) to the local SQLite database. Once migration completes, a flag is set to prevent re-migration on subsequent restarts. No manual intervention required — just deploy and the app takes care of the rest.
+
 ### Technology Stack
 
 - Go 1.24
