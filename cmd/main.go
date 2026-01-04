@@ -38,8 +38,14 @@ func main() {
 
 	sqlitePath := os.Getenv("SQLITE_DB_PATH")
 	if sqlitePath == "" {
-		// Use current working directory for a stable default path
-		sqlitePath = filepath.Join(".", "data", "content-maestro.db")
+		// Get the executable's directory for a predictable default path
+		execPath, err := os.Executable()
+		if err != nil {
+			log.Errorf("Error getting executable path: %v", err)
+			return
+		}
+		execDir := filepath.Dir(execPath)
+		sqlitePath = filepath.Join(execDir, "data", "content-maestro.db")
 		log.Debugf("SQLITE_DB_PATH not set, using default: %s", sqlitePath)
 	}
 
