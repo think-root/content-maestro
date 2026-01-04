@@ -17,9 +17,8 @@ COPY assets/ /app/assets/
 COPY internal/api/apis-config.yml /app/internal/api/apis-config.yml
 
 RUN mkdir -p /app/tmp/gh_project_img && \
-  chown -R nobody:nobody /app/tmp
-
-USER nobody
+  mkdir -p /sqlite_db && \
+  chmod -R 777 /app/tmp /sqlite_db
 
 # Default port (can be overridden by API_PORT env variable)
 EXPOSE 8080

@@ -1,6 +1,7 @@
 services:
   content-maestro:
     container_name: content-maestro
+    user: "1000:1000"
     image: content-maestro:latest
     build:
       context: .
