@@ -160,11 +160,6 @@ func (api *CronAPI) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *CronAPI) UpdateCollectSettings(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var settings store.CollectSettings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -198,11 +193,6 @@ func (api *CronAPI) UpdateCollectSettings(w http.ResponseWriter, r *http.Request
 }
 
 func (api *CronAPI) GetCollectSettings(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	settings, err := api.store.GetCollectSettings()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

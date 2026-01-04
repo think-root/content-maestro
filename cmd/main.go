@@ -9,6 +9,7 @@ import (
 	"content-maestro/internal/store"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/go-co-op/gocron"
 	"github.com/joho/godotenv"
@@ -24,7 +25,7 @@ type StoreInterface interface {
 
 func main() {
 	log.Debug("Starting content-maestro application")
-	
+
 	if err := godotenv.Load(); err != nil {
 		log.Errorf("Error loading .env file: %v", err)
 		log.Debug("Continuing without .env file - will use environment variables")
@@ -35,32 +36,27 @@ func main() {
 	var storeInstance store.StoreInterface
 	var err error
 
-	pgHost := os.Getenv("POSTGRES_HOST")
-	pgPort := os.Getenv("POSTGRES_PORT")
-	pgUser := os.Getenv("POSTGRES_USER")
-	pgPassword := os.Getenv("POSTGRES_PASSWORD")
-	pgDBName := os.Getenv("POSTGRES_DB")
+	sqlitePath := os.Getenv("SQLITE_DB_PATH")
+	if sqlitePath == "" {
+		// Use current working directory for a stable default path
+		sqlitePath = filepath.Join(".", "data", "content-maestro.db")
+		log.Debugf("SQLITE_DB_PATH not set, using default: %s", sqlitePath)
+	}
 
-	if pgHost == "" || pgPort == "" || pgUser == "" || pgDBName == "" {
-		log.Error("PostgreSQL environment variables are missing:")
-		if pgHost == "" { log.Error("- POSTGRES_HOST is empty") }
-		if pgPort == "" { log.Error("- POSTGRES_PORT is empty") }
-		if pgUser == "" { log.Error("- POSTGRES_USER is empty") }
-		if pgDBName == "" { log.Error("- POSTGRES_DB is empty") }
-		log.Error("These are required to run the application.")
+	if err := os.MkdirAll(filepath.Dir(sqlitePath), 0755); err != nil {
+		log.Errorf("Error creating database directory: %v", err)
 		return
 	}
 
-	log.Debugf("Attempting to connect to PostgreSQL...")
-	pgStore, err := store.NewPostgresStore(pgHost, pgPort, pgUser, pgPassword, pgDBName)
+	log.Debugf("Attempting to connect to SQLite database at %s...", sqlitePath)
+	sqliteStore, err := store.NewSQLiteStore(sqlitePath)
 	if err != nil {
-		log.Errorf("Error initializing PostgreSQL store: %v", err)
-		log.Errorf("Connection details: host=%s port=%s user=%s dbname=%s", pgHost, pgPort, pgUser, pgDBName)
+		log.Errorf("Error initializing SQLite store: %v", err)
 		return
 	}
-	storeInstance = pgStore
+	storeInstance = sqliteStore
 	defer storeInstance.Close()
-	log.Debug("PostgreSQL store initialized successfully")
+	log.Debug("SQLite store initialized successfully")
 
 	log.Debug("Creating tmp/gh_project_img directory")
 	if err := os.MkdirAll("tmp/gh_project_img", 0777); err != nil {
