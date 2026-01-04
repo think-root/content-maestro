@@ -38,14 +38,7 @@ func main() {
 
 	sqlitePath := os.Getenv("SQLITE_DB_PATH")
 	if sqlitePath == "" {
-		// Get the executable's directory for a predictable default path
-		execPath, err := os.Executable()
-		if err != nil {
-			log.Errorf("Error getting executable path: %v", err)
-			return
-		}
-		execDir := filepath.Dir(execPath)
-		sqlitePath = filepath.Join(execDir, "data", "content-maestro.db")
+		sqlitePath = filepath.Join(".", "data", "content-maestro.db")
 		log.Debugf("SQLITE_DB_PATH not set, using default: %s", sqlitePath)
 	}
 
@@ -63,6 +56,23 @@ func main() {
 	storeInstance = sqliteStore
 	defer storeInstance.Close()
 	log.Debug("SQLite store initialized successfully")
+
+	pgConfig := store.GetPostgresConfigFromEnv()
+	shouldMigrate, err := store.ShouldMigrate(sqliteStore, pgConfig)
+	if err != nil {
+		log.Errorf("Error checking migration status: %v", err)
+		return
+	}
+
+	if shouldMigrate {
+		log.Debug("Starting migration from PostgreSQL to SQLite...")
+		if err := store.MigrateFromPostgres(sqliteStore, pgConfig); err != nil {
+			log.Errorf("Error during PostgreSQL to SQLite migration: %v", err)
+			log.Debug("Continuing without migration - using fresh SQLite database")
+		} else {
+			log.Debug("Migration from PostgreSQL completed successfully")
+		}
+	}
 
 	log.Debug("Creating tmp/gh_project_img directory")
 	if err := os.MkdirAll("tmp/gh_project_img", 0777); err != nil {
