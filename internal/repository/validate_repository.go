@@ -15,20 +15,14 @@ var (
 func init() {
 	deleteRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/delete-repository/"
 }
-
-// ValidateRepositoryURL checks if a GitHub repository URL is accessible.
-// Returns the HTTP status code and any error.
-// Uses HEAD request for efficiency.
 func ValidateRepositoryURL(url string) (int, error) {
 	req, err := http.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("error creating request: %w", err)
 	}
 
-	// Use a separate client for GitHub requests (not the internal API client)
 	httpClient := &http.Client{
 		Timeout: client.Timeout,
-		// Don't follow redirects automatically to get the actual status
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -43,15 +37,11 @@ func ValidateRepositoryURL(url string) (int, error) {
 	return resp.StatusCode, nil
 }
 
-// deleteResponse represents the response from the delete-repository API
 type deleteResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }
 
-// DeleteRepository removes a repository from the database by URL.
-// Calls the content-alchemist /api/delete-repository/ endpoint.
-// Returns true if successful, false otherwise.
 func DeleteRepository(url string) (bool, error) {
 	payload := strings.NewReader(fmt.Sprintf(`{"url":"%s"}`, url))
 
