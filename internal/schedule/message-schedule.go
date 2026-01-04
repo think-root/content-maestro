@@ -126,29 +126,24 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 		item := repo.Data.Items[0]
 
-		// Validate repository URL before publishing
 		for {
 			statusCode, err := repository.ValidateRepositoryURL(item.URL)
 			if err != nil {
 				log.Error("Error validating repository URL %s: %v", item.URL, err)
-				// Continue with publishing if validation request fails
 				break
 			}
 
 			if statusCode == 200 {
-				// Repository is valid, proceed with publishing
 				log.Debug("Repository %s is valid (status %d)", item.URL, statusCode)
 				break
 			}
 
-			// Repository is not accessible, delete and get next
 			log.Debug("Repository %s returned status %d, deleting and getting next", item.URL, statusCode)
 
 			if _, err := repository.DeleteRepository(item.URL); err != nil {
 				log.Error("Error deleting repository %s: %v", item.URL, err)
 			}
 
-			// Get next repository
 			repo, err = repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
 			if err != nil {
 				log.Error("Error getting next repository for %s API: %v", apiName, err)
@@ -167,7 +162,6 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			item = repo.Data.Items[0]
 		}
 
-		// Skip this API if no valid repository was found
 		if len(repo.Data.Items) == 0 {
 			continue
 		}
