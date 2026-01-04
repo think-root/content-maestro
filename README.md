@@ -20,14 +20,13 @@ Helper app for [content-alchemist](https://github.com/think-root/content-alchemi
 ### Technology Stack
 
 - Go 1.24
-- PostgreSQL
+- SQLite 3.24
 
 ## Install
 
 ### Requirements
 
 - [Go 1.24](https://go.dev/doc/install) or later
-- [PostgreSQL 17](https://www.postgresql.org/download/)
 
 ### Clone repo
 
@@ -50,11 +49,7 @@ Create a **.env** file in the app root directory:
 | ------------------------- | ---------------------------- | ----------- |
 | API_TOKEN                 | Yes                          | Bearer token checked by the API middleware; requests return an error without it. |
 | API_PORT                  | No (default: 8080)           | Port for the API server. |
-| POSTGRES_HOST             | Yes                          | PostgreSQL host (app exits if missing). |
-| POSTGRES_PORT             | Yes                          | PostgreSQL port (app exits if missing). |
-| POSTGRES_USER             | Yes                          | PostgreSQL username (app exits if missing). |
-| POSTGRES_PASSWORD         | No                           | PostgreSQL password (needed if your DB requires it). |
-| POSTGRES_DB               | Yes                          | PostgreSQL database name (app exits if missing). |
+| SQLITE_DB_PATH            | No (default: ./data/content-maestro.db) | Path to SQLite database file. |
 | CONTENT_ALCHEMIST_URL     | Yes                          | Base URL for content-alchemist endpoints used by collectors and message jobs. |
 | CONTENT_ALCHEMIST_BEARER  | Yes                          | Bearer token for content-alchemist requests. |
 | CONTENT_ALCHEMIST_TIMEOUT | No (default: 300s collect / 30s repo) | Timeout in seconds for content-alchemist calls. |

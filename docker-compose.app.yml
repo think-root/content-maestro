@@ -8,8 +8,12 @@ services:
         APP_VERSION: ${APP_VERSION}
     env_file:
       - .env
+    environment:
+      - SQLITE_DB_PATH=/sqlite_db/content-maestro.db
     ports:
       - "${API_PORT:-8080}:${API_PORT:-8080}"
+    volumes:
+      - ~/sqlite_db:/sqlite_db
     networks:
       - think-root-network
 
