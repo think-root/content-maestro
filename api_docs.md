@@ -226,18 +226,18 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 }
 ```
 
-### /api/prompt-settings/update
+### /api/prompt-settings (update)
 
-**Endpoint:** `/api/prompt-settings/update`
+**Endpoint:** `/api/prompt-settings`
 
-**Method:** `POST`
+**Method:** `PUT`
 
 **Description:** Update the AI prompt settings for content generation.
 
 **Curl Example:**
 
 ```bash
-curl -X POST \
+curl -X PUT \
   -H "Authorization: Bearer <API_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -247,7 +247,7 @@ curl -X POST \
     "model": "anthropic/claude-3-sonnet",
     "content": "You are an expert technical writer specializing in open-source projects."
   }' \
-  http://localhost:8080/api/prompt-settings/update
+  http://localhost:8080/api/prompt-settings
 ```
 
 **Request Parameters:**
