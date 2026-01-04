@@ -310,7 +310,7 @@ func (api *CronAPI) GetPromptSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *CronAPI) UpdatePromptSettings(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -337,4 +337,26 @@ func (api *CronAPI) UpdatePromptSettings(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (api *CronAPI) HandleCollectSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		api.GetCollectSettings(w, r)
+	case http.MethodPut:
+		api.UpdateCollectSettings(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (api *CronAPI) HandlePromptSettings(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		api.GetPromptSettings(w, r)
+	case http.MethodPut:
+		api.UpdatePromptSettings(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
