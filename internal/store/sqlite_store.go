@@ -360,20 +360,19 @@ func (s *SQLiteStore) GetCronHistory(name string, success *bool, offset, limit i
 }
 
 func (s *SQLiteStore) HasMigrationFlag() (bool, error) {
-	query := "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='migration_flag'"
-	var count int
-	err := s.db.QueryRow(query).Scan(&count)
+	var version int
+	err := s.db.QueryRow("PRAGMA user_version").Scan(&version)
 	if err != nil {
-		return false, fmt.Errorf("failed to check migration flag: %v", err)
+		return false, fmt.Errorf("failed to check user_version: %v", err)
 	}
-	return count > 0, nil
+	// version >= 1 means migration was already done
+	return version >= 1, nil
 }
 
 func (s *SQLiteStore) SetMigrationFlag() error {
-	query := "CREATE TABLE IF NOT EXISTS migration_flag (id INTEGER PRIMARY KEY AUTOINCREMENT, migrated_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
-	_, err := s.db.Exec(query)
+	_, err := s.db.Exec("PRAGMA user_version = 1")
 	if err != nil {
-		return fmt.Errorf("failed to set migration flag: %v", err)
+		return fmt.Errorf("failed to set user_version: %v", err)
 	}
 	return nil
 }
