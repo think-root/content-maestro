@@ -1,3 +1,25 @@
+# [3.0.0](https://github.com/think-root/content-maestro/compare/v2.7.0...v3.0.0) (2026-01-04)
+
+
+### Bug Fixes
+
+* **cmd:** derive sqlite path from executable dir ([0a53078](https://github.com/think-root/content-maestro/commit/0a5307825ff61c1a97b36d48d1963d92d200419f))
+* **store:** use sqlite user_version for migration flag ([58f45f6](https://github.com/think-root/content-maestro/commit/58f45f6c04e54c92ddffdce05f384ea2d7067363))
+
+
+* feat(store)!: migrate persistence to SQLite ([bed8e29](https://github.com/think-root/content-maestro/commit/bed8e29e797d08f9f254895d6284e27c82698226))
+
+
+### Features
+
+* **cmd:** migrate from postgres when available ([ef3ce2a](https://github.com/think-root/content-maestro/commit/ef3ce2a86a5131436d638d438ad30f54cef359c7))
+* **store:** add postgres to sqlite migration ([f28adf9](https://github.com/think-root/content-maestro/commit/f28adf92992993ebad757c3b43f0fa7ba0e6aaba))
+
+
+### BREAKING CHANGES
+
+* the server now relies on a bundled SQLite database, so POSTGRES_* env vars are ignored in favor of SQLITE_DB_PATH.
+
 # [2.7.0](https://github.com/think-root/content-maestro/compare/v2.6.0...v2.7.0) (2025-12-31)
 
 
