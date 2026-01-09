@@ -11,8 +11,11 @@ import (
 
 const (
 	DefaultMaxRepos           = 5
+	DefaultResource           = "github"
 	DefaultSince              = "daily"
 	DefaultSpokenLanguageCode = "en"
+	DefaultPeriod             = "past_24_hours"
+	DefaultLanguage           = "All"
 )
 
 func boolToInt(b bool) int {
@@ -79,11 +82,19 @@ func createTablesIfNotExist(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS collect_settings (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			max_repos INTEGER NOT NULL DEFAULT 5,
+			resource TEXT NOT NULL DEFAULT 'github',
 			since TEXT NOT NULL DEFAULT 'daily',
-			spoken_language_code TEXT NOT NULL DEFAULT 'en'
+			spoken_language_code TEXT NOT NULL DEFAULT 'en',
+			period TEXT NOT NULL DEFAULT 'past_24_hours',
+			language TEXT NOT NULL DEFAULT 'All'
 		)`)
 	if err != nil {
 		return fmt.Errorf("failed to create collect_settings table: %v", err)
+	}
+
+	// Schema migration: add new columns if they don't exist
+	if err := migrateCollectSettingsSchema(db); err != nil {
+		return fmt.Errorf("failed to migrate collect_settings schema: %v", err)
 	}
 
 	_, err = db.Exec(`
@@ -101,8 +112,8 @@ func createTablesIfNotExist(db *sql.DB) error {
 	}
 
 	_, err = db.Exec(`
-		INSERT INTO collect_settings (max_repos, since, spoken_language_code)
-		SELECT 5, 'daily', 'en'
+		INSERT INTO collect_settings (max_repos, resource, since, spoken_language_code, period, language)
+		SELECT 5, 'github', 'daily', 'en', 'past_24_hours', 'All'
 		WHERE NOT EXISTS (SELECT 1 FROM collect_settings)`)
 	if err != nil {
 		return fmt.Errorf("failed to insert default collect settings: %v", err)
@@ -142,6 +153,47 @@ func createTablesIfNotExist(db *sql.DB) error {
 		WHERE NOT EXISTS (SELECT 1 FROM prompt)`)
 	if err != nil {
 		return fmt.Errorf("failed to insert default prompt settings: %v", err)
+	}
+
+	return nil
+}
+
+// migrateCollectSettingsSchema adds new columns to existing collect_settings tables
+func migrateCollectSettingsSchema(db *sql.DB) error {
+	// Check if resource column exists by querying table info
+	rows, err := db.Query("PRAGMA table_info(collect_settings)")
+	if err != nil {
+		return fmt.Errorf("failed to query table info: %v", err)
+	}
+	defer rows.Close()
+
+	columns := make(map[string]bool)
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notNull, pk int
+		var dfltValue interface{}
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
+			return fmt.Errorf("failed to scan table info: %v", err)
+		}
+		columns[name] = true
+	}
+
+	// Add missing columns
+	if !columns["resource"] {
+		if _, err := db.Exec("ALTER TABLE collect_settings ADD COLUMN resource TEXT NOT NULL DEFAULT 'github'"); err != nil {
+			return fmt.Errorf("failed to add resource column: %v", err)
+		}
+	}
+	if !columns["period"] {
+		if _, err := db.Exec("ALTER TABLE collect_settings ADD COLUMN period TEXT NOT NULL DEFAULT 'past_24_hours'"); err != nil {
+			return fmt.Errorf("failed to add period column: %v", err)
+		}
+	}
+	if !columns["language"] {
+		if _, err := db.Exec("ALTER TABLE collect_settings ADD COLUMN language TEXT NOT NULL DEFAULT 'All'"); err != nil {
+			return fmt.Errorf("failed to add language column: %v", err)
+		}
 	}
 
 	return nil
@@ -243,8 +295,8 @@ func (s *SQLiteStore) InitializeDefaultSettings() error {
 		return fmt.Errorf("failed to check collect settings: %v", err)
 	}
 	if count == 0 {
-		query := "INSERT INTO collect_settings (max_repos, since, spoken_language_code) VALUES (?, ?, ?)"
-		_, err := s.db.Exec(query, DefaultMaxRepos, DefaultSince, DefaultSpokenLanguageCode)
+		query := "INSERT INTO collect_settings (max_repos, resource, since, spoken_language_code, period, language) VALUES (?, ?, ?, ?, ?, ?)"
+		_, err := s.db.Exec(query, DefaultMaxRepos, DefaultResource, DefaultSince, DefaultSpokenLanguageCode, DefaultPeriod, DefaultLanguage)
 		if err != nil {
 			return fmt.Errorf("failed to initialize collect settings: %v", err)
 		}
@@ -380,10 +432,10 @@ func (s *SQLiteStore) SetMigrationFlag() error {
 func (s *SQLiteStore) GetCollectSettings() (*CollectSettings, error) {
 	var settings CollectSettings
 	err := s.db.QueryRow(`
-		SELECT max_repos, since, spoken_language_code
+		SELECT max_repos, resource, since, spoken_language_code, period, language
 		FROM collect_settings
 		WHERE id = 1
-	`).Scan(&settings.MaxRepos, &settings.Since, &settings.SpokenLanguageCode)
+	`).Scan(&settings.MaxRepos, &settings.Resource, &settings.Since, &settings.SpokenLanguageCode, &settings.Period, &settings.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -393,9 +445,9 @@ func (s *SQLiteStore) GetCollectSettings() (*CollectSettings, error) {
 func (s *SQLiteStore) UpdateCollectSettings(settings *CollectSettings) error {
 	_, err := s.db.Exec(`
 		UPDATE collect_settings
-		SET max_repos = ?, since = ?, spoken_language_code = ?
+		SET max_repos = ?, resource = ?, since = ?, spoken_language_code = ?, period = ?, language = ?
 		WHERE id = 1
-	`, settings.MaxRepos, settings.Since, settings.SpokenLanguageCode)
+	`, settings.MaxRepos, settings.Resource, settings.Since, settings.SpokenLanguageCode, settings.Period, settings.Language)
 	return err
 }
 
