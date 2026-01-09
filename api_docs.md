@@ -144,10 +144,18 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 ```json
 {
   "max_repos": 5,
+  "resource": "github",
   "since": "daily",
-  "spoken_language_code": "en"
+  "spoken_language_code": "en",
+  "period": "past_24_hours",
+  "language": "All"
 }
 ```
+
+> [!NOTE]
+> All fields are stored in the database, but only relevant fields are used based on the `resource` value:
+> - **GitHub**: uses `since`, `spoken_language_code`
+> - **OssInsight**: uses `period`, `language`
 
 ### /api/collect-settings (update)
 
@@ -165,27 +173,36 @@ curl -X PUT \
   -H "Content-Type: application/json" \
   -d '{
     "max_repos": 10,
+    "resource": "github",
     "since": "weekly",
-    "spoken_language_code": "uk"
+    "spoken_language_code": "uk",
+    "period": "past_24_hours",
+    "language": "All"
   }' \
   http://localhost:8080/api/collect-settings
 ```
 
 **Request Parameters:**
 
-| Parameter              | Type    | Required | Description                                                        |
-| ---------------------- | ------- | -------- | ------------------------------------------------------------------ |
-| `max_repos`            | integer | No       | Maximum number of repositories to collect                          |
-| `since`                | string  | No       | Time period for collection (`daily`, `weekly`, `monthly`)          |
-| `spoken_language_code` | string  | No       | Language code for content (e.g., `en`, `uk`, `es`)                 |
+| Parameter              | Type    | Required | Description                                                                                           |
+| ---------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `max_repos`            | integer | No       | Maximum number of repositories to collect                                                             |
+| `resource`             | string  | No       | Data source: `github` (default) or `ossinsight`                                                       |
+| `since`                | string  | No       | **For GitHub**: Time period (`daily`, `weekly`, `monthly`)                                            |
+| `spoken_language_code` | string  | No       | **For GitHub**: Spoken language filter (e.g., `en`, `uk`, `es`)                                       |
+| `period`               | string  | No       | **For OssInsight**: Time period (`past_24_hours`, `past_week`, `past_month`, `past_3_months`)         |
+| `language`             | string  | No       | **For OssInsight**: Programming language filter (e.g., `Python`, `All`)                               |
 
 **Request Example:**
 
 ```json
 {
   "max_repos": 10,
+  "resource": "github",
   "since": "weekly",
-  "spoken_language_code": "uk"
+  "spoken_language_code": "uk",
+  "period": "past_24_hours",
+  "language": "All"
 }
 ```
 
