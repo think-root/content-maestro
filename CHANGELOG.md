@@ -1,3 +1,12 @@
+# [3.1.0](https://github.com/think-root/content-maestro/compare/v3.0.0...v3.1.0) (2026-01-09)
+
+
+### Features
+
+* **schedule:** add new fields to generateRequest ([4312904](https://github.com/think-root/content-maestro/commit/43129046b2474eedd211c9b4011f3500817878da))
+* **store:** add new collect settings fields ([8ee4b9a](https://github.com/think-root/content-maestro/commit/8ee4b9a3ef3cc5f77453768785f6e89c73e90a10))
+* **store:** add resource, period, and language to CollectSettings ([1303e14](https://github.com/think-root/content-maestro/commit/1303e14338e7a1f85ce98f89bee22b5281265b29))
+
 # [3.0.0](https://github.com/think-root/content-maestro/compare/v2.7.0...v3.0.0) (2026-01-04)
 
 
