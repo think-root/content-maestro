@@ -16,8 +16,11 @@ import (
 
 type generateRequest struct {
 	MaxRepos           int    `json:"max_repos"`
+	Resource           string `json:"resource"`
 	Since              string `json:"since"`
 	SpokenLanguageCode string `json:"spoken_language_code"`
+	Period             string `json:"period"`
+	Language           string `json:"language"`
 	UseDirectURL       bool   `json:"use_direct_url"`
 	LlmProvider        string `json:"llm_provider"`
 	LlmOutputLanguage  string `json:"llm_output_language"`
@@ -93,8 +96,11 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 	payload := generateRequest{
 		MaxRepos:           settings.MaxRepos,
+		Resource:           settings.Resource,
 		Since:              settings.Since,
 		SpokenLanguageCode: settings.SpokenLanguageCode,
+		Period:             settings.Period,
+		Language:           settings.Language,
 		UseDirectURL:       promptSettings.UseDirectURL,
 		LlmProvider:        promptSettings.LlmProvider,
 		LlmOutputLanguage:  promptSettings.LlmOutputLanguage,
