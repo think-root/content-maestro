@@ -258,8 +258,11 @@ func TestSQLiteStore_GetCollectSettings(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, settings)
 	assert.Equal(t, 5, settings.MaxRepos)
+	assert.Equal(t, "github", settings.Resource)
 	assert.Equal(t, "daily", settings.Since)
 	assert.Equal(t, "en", settings.SpokenLanguageCode)
+	assert.Equal(t, "past_24_hours", settings.Period)
+	assert.Equal(t, "All", settings.Language)
 }
 
 func TestSQLiteStore_UpdateCollectSettings(t *testing.T) {
@@ -268,8 +271,11 @@ func TestSQLiteStore_UpdateCollectSettings(t *testing.T) {
 
 	newSettings := &CollectSettings{
 		MaxRepos:           10,
+		Resource:           "ossinsight",
 		Since:              "weekly",
 		SpokenLanguageCode: "uk",
+		Period:             "past_month",
+		Language:           "Python",
 	}
 
 	err := store.UpdateCollectSettings(newSettings)
@@ -278,8 +284,11 @@ func TestSQLiteStore_UpdateCollectSettings(t *testing.T) {
 	settings, err := store.GetCollectSettings()
 	require.NoError(t, err)
 	assert.Equal(t, 10, settings.MaxRepos)
+	assert.Equal(t, "ossinsight", settings.Resource)
 	assert.Equal(t, "weekly", settings.Since)
 	assert.Equal(t, "uk", settings.SpokenLanguageCode)
+	assert.Equal(t, "past_month", settings.Period)
+	assert.Equal(t, "Python", settings.Language)
 }
 
 func TestSQLiteStore_GetPromptSettings(t *testing.T) {
