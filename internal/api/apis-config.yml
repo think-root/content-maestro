@@ -55,3 +55,17 @@ apis:
     response_type: "json"
     text_language: "en"
     socialify_image: false
+
+  threads:
+    url: "{env.THREADS_URL}/threads/post"
+    method: "POST"
+    auth_type: "api_key"
+    token_env_var: "THREADS_API_KEY"
+    token_header: "X-API-Key"
+    content_type: "multipart"
+    timeout: 30
+    success_code: 200
+    enabled: true
+    response_type: "json"
+    text_language: "en"
+    socialify_image: false
