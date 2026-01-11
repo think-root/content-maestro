@@ -82,7 +82,7 @@ func TestSocialify(t *testing.T) {
 			SocialifyHTTPClient = client
 			defer func() { SocialifyHTTPClient = oldClient }()
 
-			err := Socialify(tt.usernameRepo)
+			err := Socialify(tt.usernameRepo, "./tmp/gh_project_img/image.png")
 
 			if (err != nil) != tt.expectedError {
 				t.Errorf("Socialify() error = %v, expectedError %v", err, tt.expectedError)
@@ -121,7 +121,7 @@ func TestSocialifyInvalidPath(t *testing.T) {
 		t.Logf("Error removing directory (if exists): %v", err)
 	}
 
-	err := Socialify("test/repo")
+	err := Socialify("test/repo", "./tmp/gh_project_img/image.png")
 
 	if err == nil {
 		t.Error("Expected error when directory doesn't exist, got nil")
