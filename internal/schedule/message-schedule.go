@@ -209,6 +209,10 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		} else if resp.Success {
 			log.Debugf("%s post created successfully with language %s!", apiName, textLanguage)
 			successfulAPIs = append(successfulAPIs, apiName)
+		} else {
+			log.Errorf("%s API request failed (status %d): %s", apiName, resp.StatusCode, string(resp.Body))
+			failedAPIs = append(failedAPIs, apiName)
+			errorMessages = append(errorMessages, fmt.Sprintf("%s API failed (status %d)", apiName, resp.StatusCode))
 		}
 	}
 
