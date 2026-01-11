@@ -7,6 +7,8 @@ import (
 	"content-maestro/internal/store"
 	"content-maestro/internal/utils"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -77,9 +79,11 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 			item := repo.Data.Items[0]
 			username_repo := strings.TrimPrefix(item.URL, "https://github.com/")
-			image_name = "./tmp/gh_project_img/image.png"
+			timestamp := time.Now().UnixNano()
+			imageFilename := fmt.Sprintf("image_%d.png", timestamp)
+			image_name = fmt.Sprintf("./tmp/gh_project_img/%s", imageFilename)
 
-			err = socialify.Socialify(username_repo)
+			err = socialify.Socialify(username_repo, image_name)
 			if err != nil {
 				log.Error(err)
 				err := utils.CopyFile("./assets/banner.jpg", image_name)
@@ -193,6 +197,16 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			req = api.RequestConfig{
 				APIName:  apiName,
 				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
+			}
+
+			if endpoint.SocialifyImage && image_name != "" {
+				publicURL := os.Getenv("PUBLIC_URL")
+				if publicURL != "" {
+					imageURL := fmt.Sprintf("%s/images/%s", publicURL, filepath.Base(image_name))
+					req.JSONBody["image_url"] = imageURL
+				} else {
+					log.Error("PUBLIC_URL not set, cannot generate image_url for API %s", apiName)
+				}
 			}
 		default:
 			req = api.RequestConfig{
