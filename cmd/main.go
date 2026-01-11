@@ -105,6 +105,9 @@ func main() {
 	mux.Handle("/api/prompt-settings", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.HandlePromptSettings)))))
 	mux.Handle("/api/cron-history", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCronHistory)))))
 
+	fs := http.FileServer(http.Dir("./tmp/gh_project_img"))
+	mux.Handle("/images/", http.StripPrefix("/images/", fs))
+
 	port := os.Getenv("API_PORT")
 	if port == "" {
 		port = "8080"
