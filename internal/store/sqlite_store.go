@@ -92,7 +92,6 @@ func createTablesIfNotExist(db *sql.DB) error {
 		return fmt.Errorf("failed to create collect_settings table: %v", err)
 	}
 
-	// Schema migration: add new columns if they don't exist
 	if err := migrateCollectSettingsSchema(db); err != nil {
 		return fmt.Errorf("failed to migrate collect_settings schema: %v", err)
 	}
@@ -158,9 +157,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 	return nil
 }
 
-// migrateCollectSettingsSchema adds new columns to existing collect_settings tables
 func migrateCollectSettingsSchema(db *sql.DB) error {
-	// Check if resource column exists by querying table info
 	rows, err := db.Query("PRAGMA table_info(collect_settings)")
 	if err != nil {
 		return fmt.Errorf("failed to query table info: %v", err)
@@ -179,7 +176,6 @@ func migrateCollectSettingsSchema(db *sql.DB) error {
 		columns[name] = true
 	}
 
-	// Add missing columns
 	if !columns["resource"] {
 		if _, err := db.Exec("ALTER TABLE collect_settings ADD COLUMN resource TEXT NOT NULL DEFAULT 'github'"); err != nil {
 			return fmt.Errorf("failed to add resource column: %v", err)
@@ -417,7 +413,6 @@ func (s *SQLiteStore) HasMigrationFlag() (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to check user_version: %v", err)
 	}
-	// version >= 1 means migration was already done
 	return version >= 1, nil
 }
 
