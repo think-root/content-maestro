@@ -62,7 +62,7 @@ apis:
     auth_type: "api_key"
     token_env_var: "THREADS_API_KEY"
     token_header: "X-API-Key"
-    content_type: "multipart"
+    content_type: "json"
     timeout: 30
     success_code: 200
     enabled: true
