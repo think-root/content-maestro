@@ -1,3 +1,20 @@
+# [3.2.0](https://github.com/think-root/content-maestro/compare/v3.1.0...v3.2.0) (2026-01-11)
+
+
+### Bug Fixes
+
+* **api:** update content type to json ([fedaf55](https://github.com/think-root/content-maestro/commit/fedaf55ebc04078f6749666f19fbff07504e046e))
+* **schedule:** handle failed API requests ([49ac610](https://github.com/think-root/content-maestro/commit/49ac610989b8a0a801763089b756da316365f0a6))
+
+
+### Features
+
+* **api:** add endpoint for serving static images ([074b9de](https://github.com/think-root/content-maestro/commit/074b9de1e825fe980855dc5942c597fba10ea862))
+* **api:** add threads api config ([df73f3c](https://github.com/think-root/content-maestro/commit/df73f3ccd16e1d1ec31c43a53ef8e8a677ec3bbf))
+* **socialify:** add output path parameter ([f2247df](https://github.com/think-root/content-maestro/commit/f2247df2a63f59aaa3cdb8bc5b4f64ffca21314a))
+* **socialify:** add output path parameter ([50ea9b1](https://github.com/think-root/content-maestro/commit/50ea9b15ead9c3812551507534c5b745e48e9617))
+* **socialify:** add unique image filenames and image URL support ([0aee528](https://github.com/think-root/content-maestro/commit/0aee528aa928b624edf044fc1f93b8cf959eb26e))
+
 # [3.1.0](https://github.com/think-root/content-maestro/compare/v3.0.0...v3.1.0) (2026-01-09)
 
 
