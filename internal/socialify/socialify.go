@@ -34,12 +34,12 @@ func ResetRetryConfig() {
 	currentConfig = defaultConfig
 }
 
-func Socialify(usernameRepo string) error {
+func Socialify(usernameRepo string, outputPath string) error {
 	log.Debug("Starting Socialify image parsing")
 
 	var lastErr error
 	for attempt := 1; attempt <= currentConfig.MaxRetries; attempt++ {
-		err := trySocialify(usernameRepo)
+		err := trySocialify(usernameRepo, outputPath)
 		if err == nil {
 			log.Debug("Socialify image parsing finished")
 			return nil
@@ -56,7 +56,7 @@ func Socialify(usernameRepo string) error {
 	return lastErr
 }
 
-func trySocialify(usernameRepo string) error {
+func trySocialify(usernameRepo string, outputPath string) error {
 	patternsArray := []string{"Diagonal Stripes", "Charlie Brown", "Brick Wall", "Circuit Board", "Formal Invitation"}
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -90,7 +90,7 @@ func trySocialify(usernameRepo string) error {
 		return err
 	}
 
-	file, err := os.Create("./tmp/gh_project_img/image.png")
+	file, err := os.Create(outputPath)
 	if err != nil {
 		log.Error(err)
 		return err
