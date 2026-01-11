@@ -66,6 +66,7 @@ Create a **.env** file in the app root directory:
 | WAPP_SERVER_URL           | Only if enabling WhatsApp    | URL of the WhatsApp connector server (disabled by default in `apis-config.yml`). |
 | WAPP_TOKEN                | Only if enabling WhatsApp    | API key for the WhatsApp connector. |
 | WAPP_JID                  | Only if enabling WhatsApp    | Target WhatsApp chat/channel JID for `/wapp/send-message`. |
+| PUBLIC_URL                | Yes (for Threads)            | Base URL (e.g., https://yourdomain.com) for serving images to external APIs. |
 
 ### Run the app
 
