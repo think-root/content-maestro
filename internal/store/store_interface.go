@@ -11,9 +11,9 @@ type StoreInterface interface {
 	GetCronSetting(name string) (*models.CronSetting, error)
 	GetAllCronSettings() ([]models.CronSetting, error)
 	UpdateCronSetting(name string, schedule string, isActive bool) (*models.CronSetting, error)
-	LogCronExecution(name string, success bool, output string) error
-	GetCronHistoryCount(name string, success *bool, startDate, endDate *time.Time) (int, error)
-	GetCronHistory(name string, success *bool, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error)
+	LogCronExecution(name string, status int, output string) error
+	GetCronHistoryCount(name string, status *int, startDate, endDate *time.Time) (int, error)
+	GetCronHistory(name string, status *int, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error)
 	GetCollectSettings() (*CollectSettings, error)
 	UpdateCollectSettings(settings *CollectSettings) error
 	GetPromptSettings() (*models.PromptSettings, error)
