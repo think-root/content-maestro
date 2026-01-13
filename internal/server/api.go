@@ -235,14 +235,10 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 
 	var status *int
 	if successStr != "" {
-		successVal, err := strconv.ParseBool(successStr)
-		if err != nil {
-			http.Error(w, "Invalid success parameter", http.StatusBadRequest)
+		statusVal, err := strconv.Atoi(successStr)
+		if err != nil || statusVal < 0 || statusVal > 2 {
+			http.Error(w, "Invalid success parameter: must be 0, 1, or 2", http.StatusBadRequest)
 			return
-		}
-		statusVal := 0
-		if successVal {
-			statusVal = 1
 		}
 		status = &statusVal
 	}
