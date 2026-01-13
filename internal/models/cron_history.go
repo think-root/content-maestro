@@ -5,7 +5,7 @@ import "time"
 type CronHistory struct {
 	Name      string    `json:"name"`
 	Timestamp time.Time `json:"timestamp"`
-	Success   bool      `json:"success"`
+	Success   int       `json:"success"`
 	Output    string    `json:"output,omitempty"`
 }
 
