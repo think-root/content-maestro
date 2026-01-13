@@ -1,3 +1,22 @@
+# [3.3.0](https://github.com/think-root/content-maestro/compare/v3.2.0...v3.3.0) (2026-01-13)
+
+
+### Bug Fixes
+
+* **api:** correct status parameter handling in GetCronHistory ([851cae5](https://github.com/think-root/content-maestro/commit/851cae539e8014b6881b11b64610c37f2cc5c929))
+* **api:** increase timeout for threads API ([f2c6fff](https://github.com/think-root/content-maestro/commit/f2c6fffd695e9e57a188191937393b6c5ff88375))
+* **api:** update log message format ([5e507ff](https://github.com/think-root/content-maestro/commit/5e507ff20ffe703dc9332862bd352e7b3858837b))
+* **schedule:** improve message job execution status tracking ([687c708](https://github.com/think-root/content-maestro/commit/687c708fa589e95d492892bf5f0a6b3cedfbb67c))
+* **schedule:** standardize error handling with status codes ([a5578f8](https://github.com/think-root/content-maestro/commit/a5578f886c314163f1c8acd8b8eb200bd704f3f4))
+* **store:** correct cron history success field handling ([35fbf8d](https://github.com/think-root/content-maestro/commit/35fbf8d7d7089000dc6da2de66bc53ccb0cfab03))
+* update log statements to use Debugf ([979a548](https://github.com/think-root/content-maestro/commit/979a548ac1dc912b1f90026f1f947b7770ff85b4))
+
+
+### Features
+
+* **cron:** enhance CronHistory with numeric success codes ([7f6eaff](https://github.com/think-root/content-maestro/commit/7f6eaff9f18e1680e619d425dd015309a8ea4ba0))
+* **store:** enhance cron history filtering with status codes ([d630e9e](https://github.com/think-root/content-maestro/commit/d630e9e920b7aeb98e804c6727983ed1acee2303))
+
 # [3.2.0](https://github.com/think-root/content-maestro/compare/v3.1.0...v3.2.0) (2026-01-11)
 
 
