@@ -59,7 +59,7 @@ func getContentAlchemistTimeout() time.Duration {
 func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("Collecting posts...")
 
-	var success bool
+	var status int
 	var logMessage string
 
 	defer func() {
@@ -67,21 +67,22 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		if r := recover(); r != nil {
 			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Collect job panic: %v", r)
-			if err := store.LogCronExecution("collect", false, panicMessage); err != nil {
+			if err := store.LogCronExecution("collect", 0, panicMessage); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
 			}
 			panic(r)
 		}
 
-		if err := store.LogCronExecution("collect", success, logMessage); err != nil {
+		if err := store.LogCronExecution("collect", status, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
 	}()
 
+
 	settings, err := store.GetCollectSettings()
 	if err != nil {
 		log.Error("Error getting collect settings: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error getting collect settings: %v", err)
 		return
 	}
@@ -89,7 +90,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	promptSettings, err := store.GetPromptSettings()
 	if err != nil {
 		log.Error("Error getting prompt settings: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error getting prompt settings: %v", err)
 		return
 	}
@@ -129,7 +130,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("Error marshaling request: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error marshaling request: %v", err)
 		return
 	}
@@ -137,7 +138,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	req, err := http.NewRequest("POST", os.Getenv("CONTENT_ALCHEMIST_URL")+"/think-root/api/auto-generate/", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error("Error creating request: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error creating request: %v", err)
 		return
 	}
@@ -156,7 +157,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Error sending request: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error sending request: %v", err)
 		return
 	}
@@ -164,7 +165,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		log.Error("API returned HTTP error: %d %s", resp.StatusCode, resp.Status)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("API returned HTTP error: %d %s", resp.StatusCode, resp.Status)
 		return
 	}
@@ -172,7 +173,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Error reading response: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error reading response: %v", err)
 		return
 	}
@@ -182,7 +183,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	var response generateResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		log.Error("Error unmarshaling response: %v", err)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("Error unmarshaling response: %v. Response body: %s", err, string(body))
 		return
 	}
@@ -190,14 +191,14 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	switch response.Status {
 	case "ok":
 		log.Debugf("Collected %d new repositories", len(response.Added))
-		success = true
+		status = 1
 		logMessage = fmt.Sprintf("Collected %d repositories.", len(response.Added))
 		if len(response.DontAdded) > 0 {
 			logMessage += fmt.Sprintf(" Already exists %d repositories.", len(response.DontAdded))
 		}
 	case "error":
 		log.Error("API returned error status: %s", response.ErrorMessage)
-		success = false
+		status = 0
 		if response.ErrorMessage != "" {
 			logMessage = fmt.Sprintf("API error: %s", response.ErrorMessage)
 		} else {
@@ -208,7 +209,7 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	default:
 		log.Error("API returned unknown status: %s", response.Status)
-		success = false
+		status = 0
 		logMessage = fmt.Sprintf("API returned unknown status: %s", response.Status)
 		if response.ErrorMessage != "" {
 			logMessage += fmt.Sprintf(". Error message: %s", response.ErrorMessage)
