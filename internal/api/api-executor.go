@@ -1,12 +1,12 @@
 package api
 
 import (
-	"maps"
 	"bytes"
 	"content-maestro/internal/logger"
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -232,7 +232,7 @@ func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
 	if success && apiEndpoint.ResponseType == "json" {
 		var jsonResponse any
 		if err := json.Unmarshal(respBody, &jsonResponse); err != nil {
-			log.Debug("Warning: Failed to parse JSON response: %v", err)
+			log.Debugf("Warning: Failed to parse JSON response: %v", err)
 		} else {
 			apiResp.JSONResponse = jsonResponse
 		}
