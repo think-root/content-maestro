@@ -1,3 +1,12 @@
+## [3.3.1](https://github.com/think-root/content-maestro/compare/v3.3.0...v3.3.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* **api:** rename success parameter to status in GetCronHistory ([fbebd33](https://github.com/think-root/content-maestro/commit/fbebd33c8cb3ebeaf84a07c938107013e45bdb51))
+* **cron:** rename 'success' field to 'status' in CronHistory ([31440e0](https://github.com/think-root/content-maestro/commit/31440e0ce4965b9dbcb6d178761220f59d6a5776))
+* **migration:** correct column name in cron_history insert ([9ca01f1](https://github.com/think-root/content-maestro/commit/9ca01f18afaa372903964da73d3ddb73cf7f802e))
+
 # [3.3.0](https://github.com/think-root/content-maestro/compare/v3.2.0...v3.3.0) (2026-01-13)
 
 
