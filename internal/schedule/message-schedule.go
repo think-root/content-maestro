@@ -73,7 +73,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			}
 
 			if len(repo.Data.Items) == 0 {
-				log.Debug("No items found in repository for language %s", textLanguage)
+				log.Debugf("No items found in repository for language %s", textLanguage)
 				continue
 			}
 
@@ -122,7 +122,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 
 		if len(repo.Data.Items) == 0 {
-			log.Debug("No items found in repository for %s API with language %s", apiName, textLanguage)
+			log.Debugf("No items found in repository for %s API with language %s", apiName, textLanguage)
 			failedAPIs = append(failedAPIs, apiName)
 			errorMessages = append(errorMessages, fmt.Sprintf("%s API error: no items for language %s", apiName, textLanguage))
 			continue
@@ -138,11 +138,11 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			}
 
 			if statusCode == 200 {
-				log.Debug("Repository %s is valid (status %d)", item.URL, statusCode)
+				log.Debugf("Repository %s is valid (status %d)", item.URL, statusCode)
 				break
 			}
 
-			log.Debug("Repository %s returned status %d, deleting and getting next", item.URL, statusCode)
+			log.Debugf("Repository %s returned status %d, deleting and getting next", item.URL, statusCode)
 
 			if _, err := repository.DeleteRepository(item.URL); err != nil {
 				log.Error("Error deleting repository %s: %v", item.URL, err)
@@ -157,7 +157,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			}
 
 			if len(repo.Data.Items) == 0 {
-				log.Debug("No more valid repositories available for %s API", apiName)
+				log.Debugf("No more valid repositories available for %s API", apiName)
 				failedAPIs = append(failedAPIs, apiName)
 				errorMessages = append(errorMessages, fmt.Sprintf("%s API error: no valid repositories available", apiName))
 				break
