@@ -225,7 +225,7 @@ func migrateCronHistory(pgDB *sql.DB, tx *sql.Tx) error {
 		}
 
 		_, err := tx.Exec(
-			"INSERT INTO cron_history (name, timestamp, success, output) VALUES (?, ?, ?, ?)",
+			"INSERT INTO cron_history (name, timestamp, status, output) VALUES (?, ?, ?, ?)",
 			h.Name, h.Timestamp, h.Success, h.Output,
 		)
 		if err != nil {
