@@ -300,9 +300,13 @@ func (s *SQLiteStore) InitializeDefaultSettings() error {
 	return nil
 }
 
-func (s *SQLiteStore) LogCronExecution(name string, success bool, output string) error {
+func (s *SQLiteStore) LogCronExecution(name string, status int, output string) error {
 	if name == "" {
 		return fmt.Errorf("cron job name cannot be empty")
+	}
+
+	if status < 0 || status > 2 {
+		return fmt.Errorf("invalid status value: %d (must be 0, 1, or 2)", status)
 	}
 
 	const maxOutputLength = 10000
@@ -310,26 +314,24 @@ func (s *SQLiteStore) LogCronExecution(name string, success bool, output string)
 		output = output[:maxOutputLength-50] + "... [truncated due to length]"
 	}
 
-	successInt := boolToInt(success)
-
 	timestamp := time.Now()
 
 	query := "INSERT INTO cron_history (name, timestamp, success, output) VALUES (?, ?, ?, ?)"
-	_, err := s.db.Exec(query, name, timestamp, successInt, output)
+	_, err := s.db.Exec(query, name, timestamp, status, output)
 	if err != nil {
 		fmt.Printf("Failed to log cron execution to database: %v\n", err)
-		fmt.Printf("Attempted to log: name=%s, success=%t, timestamp=%v, output_length=%d\n",
-			name, success, timestamp, len(output))
+		fmt.Printf("Attempted to log: name=%s, status=%d, timestamp=%v, output_length=%d\n",
+			name, status, timestamp, len(output))
 		return fmt.Errorf("failed to log cron execution: %v", err)
 	}
 
-	fmt.Printf("Successfully logged cron execution: name=%s, success=%t, timestamp=%v\n",
-		name, success, timestamp)
+	fmt.Printf("Successfully logged cron execution: name=%s, status=%d, timestamp=%v\n",
+		name, status, timestamp)
 
 	return nil
 }
 
-func (s *SQLiteStore) GetCronHistoryCount(name string, success *bool, startDate, endDate *time.Time) (int, error) {
+func (s *SQLiteStore) GetCronHistoryCount(name string, status *int, startDate, endDate *time.Time) (int, error) {
 	query := "SELECT COUNT(*) FROM cron_history WHERE 1=1"
 	args := []any{}
 
@@ -337,9 +339,9 @@ func (s *SQLiteStore) GetCronHistoryCount(name string, success *bool, startDate,
 		query += " AND name = ?"
 		args = append(args, name)
 	}
-	if success != nil {
+	if status != nil {
 		query += " AND success = ?"
-		args = append(args, boolToInt(*success))
+		args = append(args, *status)
 	}
 	if startDate != nil {
 		query += " AND timestamp >= ?"
@@ -358,7 +360,7 @@ func (s *SQLiteStore) GetCronHistoryCount(name string, success *bool, startDate,
 	return count, nil
 }
 
-func (s *SQLiteStore) GetCronHistory(name string, success *bool, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error) {
+func (s *SQLiteStore) GetCronHistory(name string, status *int, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error) {
 	query := "SELECT name, timestamp, success, output FROM cron_history WHERE 1=1"
 	args := []any{}
 
@@ -366,9 +368,9 @@ func (s *SQLiteStore) GetCronHistory(name string, success *bool, offset, limit i
 		query += " AND name = ?"
 		args = append(args, name)
 	}
-	if success != nil {
+	if status != nil {
 		query += " AND success = ?"
-		args = append(args, boolToInt(*success))
+		args = append(args, *status)
 	}
 	if startDate != nil {
 		query += " AND timestamp >= ?"
@@ -397,11 +399,9 @@ func (s *SQLiteStore) GetCronHistory(name string, success *bool, offset, limit i
 	var history []models.CronHistory
 	for rows.Next() {
 		var h models.CronHistory
-		var successInt int
-		if err := rows.Scan(&h.Name, &h.Timestamp, &successInt, &h.Output); err != nil {
+		if err := rows.Scan(&h.Name, &h.Timestamp, &h.Success, &h.Output); err != nil {
 			return nil, fmt.Errorf("failed to scan cron history: %v", err)
 		}
-		h.Success = successInt == 1
 		history = append(history, h)
 	}
 	return history, nil
