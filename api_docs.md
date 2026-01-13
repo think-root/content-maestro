@@ -6,6 +6,8 @@
 >
 > All endpoints return JSON responses with appropriate HTTP status codes
 
+## Methods
+
 ### /api/crons
 
 **Endpoint:** `/api/crons`
@@ -154,6 +156,7 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 > [!NOTE]
 > All fields are stored in the database, but only relevant fields are used based on the `resource` value:
+>
 > - **GitHub**: uses `since`, `spoken_language_code`
 > - **OssInsight**: uses `period`, `language`
 
@@ -269,13 +272,13 @@ curl -X PUT \
 
 **Request Parameters:**
 
-| Parameter        | Type    | Required | Description                                                                              |
-| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
-| `use_direct_url` | boolean | No       | Whether to use direct URL for LLM API calls                                              |
-| `llm_provider`   | string  | No       | LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)        |
-| `temperature`    | float   | No       | Controls randomness in AI responses (0.0-2.0)                                            |
-| `model`          | string  | No       | The AI model to use for content generation                                               |
-| `content`        | string  | No       | The prompt content/template for AI generation                                            |
+| Parameter        | Type    | Required | Description                                                                        |
+| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------- |
+| `use_direct_url` | boolean | No       | Whether to use direct URL for LLM API calls                                        |
+| `llm_provider`   | string  | No       | LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)   |
+| `temperature`    | float   | No       | Controls randomness in AI responses (0.0-2.0)                                      |
+| `model`          | string  | No       | The AI model to use for content generation                                         |
+| `content`        | string  | No       | The prompt content/template for AI generation                                      |
 
 **Request Example:**
 
@@ -327,7 +330,14 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 **Response Structure:**
 
-The API returns a paginated response with the following structure:
+The API returns a paginated response with the following structure.
+Note that the `success` field uses integer status codes:
+
+- `0`: Failure
+- `1`: Success
+- `2`: Partial Success
+
+Structure:
 
 - `data`: Array of cron history records
 - `pagination`: Pagination metadata object containing:
@@ -345,14 +355,20 @@ The API returns a paginated response with the following structure:
     {
       "name": "collect",
       "timestamp": "2024-03-15T10:00:00Z",
-      "success": true,
+      "success": 1,
       "output": "Successfully collected 5 repositories"
     },
     {
       "name": "message",
       "timestamp": "2024-03-15T10:05:00Z",
-      "success": false,
+      "success": 0,
       "output": "Network error"
+    },
+    {
+      "name": "message",
+      "timestamp": "2024-03-15T10:10:00Z",
+      "success": 2,
+      "output": "Message sent to: telegram. Failed: bluesky"
     }
   ],
   "pagination": {
@@ -374,56 +390,56 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
   http://localhost:8080/api/cron-history
 ```
 
-2. Get history for specific job with custom pagination:
+1. Get history for specific job with custom pagination:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=collect&page=1&limit=10"
 ```
 
-3. Get only failed executions sorted by oldest first:
+1. Get only failed executions sorted by oldest first:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?success=false&sort=asc&limit=5"
 ```
 
-4. Get message job history with pagination and newest first sorting:
+1. Get message job history with pagination and newest first sorting:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=message&page=2&limit=15&sort=desc"
 ```
 
-5. Get second page of all executions with 10 records per page:
+1. Get second page of all executions with 10 records per page:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?page=2&limit=10"
 ```
 
-6. Get history for a specific date range (from March 1st to March 15th, 2024):
+1. Get history for a specific date range (from March 1st to March 15th, 2024):
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?start_date=2024-03-01&end_date=2024-03-15"
 ```
 
-7. Get failed executions from the last week:
+1. Get failed executions from the last week:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?success=false&start_date=2024-03-08"
 ```
 
-8. Get collect job history for a specific date with precise timestamps:
+1. Get collect job history for a specific date with precise timestamps:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
   "http://localhost:8080/api/cron-history?name=collect&start_date=2024-03-15T00:00:00Z&end_date=2024-03-15T23:59:59Z"
 ```
 
-9. Get recent executions from the last 3 days, sorted oldest first:
+1. Get recent executions from the last 3 days, sorted oldest first:
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
@@ -452,4 +468,3 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 - 400: Bad Request - Invalid parameters or date validation errors
 - 401: Unauthorized - Invalid or missing Bearer token
 - 500: Internal Server Error - Database or server error
-
