@@ -224,14 +224,9 @@ func migrateCronHistory(pgDB *sql.DB, tx *sql.Tx) error {
 			return fmt.Errorf("failed to scan maestro_cron_history: %v", err)
 		}
 
-		successInt := 0
-		if h.Success {
-			successInt = 1
-		}
-
 		_, err := tx.Exec(
 			"INSERT INTO cron_history (name, timestamp, success, output) VALUES (?, ?, ?, ?)",
-			h.Name, h.Timestamp, successInt, h.Output,
+			h.Name, h.Timestamp, h.Success, h.Output,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to insert cron_history into SQLite: %v", err)
