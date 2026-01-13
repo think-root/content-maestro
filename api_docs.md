@@ -324,14 +324,14 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 | `page`       | integer | No       | Page number (default: 1)                                                     |
 | `limit`      | integer | No       | Number of records per page (default: 20)                                     |
 | `sort`       | string  | No       | Sort order by execution date (`asc` or `desc`, default: `desc`)              |
-| `success`    | integer | No       | Filter by execution status: `0` (Failure), `1` (Success), `2` (Partial)      |
+| `status`     | integer | No       | Filter by execution status: `0` (Failure), `1` (Success), `2` (Partial)      |
 | `start_date` | string  | No       | Filter records from this date onwards (format: `YYYY-MM-DD` or RFC3339)      |
 | `end_date`   | string  | No       | Filter records up to this date (format: `YYYY-MM-DD` or RFC3339)             |
 
 **Response Structure:**
 
 The API returns a paginated response with the following structure.
-Note that the `success` field uses integer status codes:
+Note that the `status` field uses integer status codes:
 
 - `0`: Failure
 - `1`: Success
@@ -355,19 +355,19 @@ Structure:
     {
       "name": "collect",
       "timestamp": "2024-03-15T10:00:00Z",
-      "success": 1,
+      "status": 1,
       "output": "Successfully collected 5 repositories"
     },
     {
       "name": "message",
       "timestamp": "2024-03-15T10:05:00Z",
-      "success": 0,
+      "status": 0,
       "output": "Network error"
     },
     {
       "name": "message",
       "timestamp": "2024-03-15T10:10:00Z",
-      "success": 2,
+      "status": 2,
       "output": "Message sent to: telegram. Failed: bluesky"
     }
   ],
@@ -401,7 +401,7 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
-  "http://localhost:8080/api/cron-history?success=0&sort=asc&limit=5"
+  "http://localhost:8080/api/cron-history?status=0&sort=asc&limit=5"
 ```
 
 1. Get message job history with pagination and newest first sorting:
@@ -429,7 +429,7 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 ```bash
 curl -H "Authorization: Bearer <API_TOKEN>" \
-  "http://localhost:8080/api/cron-history?success=0&start_date=2024-03-08"
+  "http://localhost:8080/api/cron-history?status=0&start_date=2024-03-08"
 ```
 
 1. Get collect job history for a specific date with precise timestamps:
