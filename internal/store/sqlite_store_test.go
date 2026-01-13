@@ -121,14 +121,14 @@ func TestSQLiteStore_LogCronExecution(t *testing.T) {
 	store := setupTestStore(t)
 	defer store.Close()
 
-	err := store.LogCronExecution("test_job", true, "Test output")
+	err := store.LogCronExecution("test_job", 1, "Test output")
 	require.NoError(t, err)
 
 	history, err := store.GetCronHistory("test_job", nil, 0, 10, "desc", nil, nil)
 	require.NoError(t, err)
 	assert.Len(t, history, 1)
 	assert.Equal(t, "test_job", history[0].Name)
-	assert.True(t, history[0].Success)
+	assert.Equal(t, 1, history[0].Success)
 	assert.Equal(t, "Test output", history[0].Output)
 }
 
@@ -136,7 +136,7 @@ func TestSQLiteStore_LogCronExecution_EmptyName(t *testing.T) {
 	store := setupTestStore(t)
 	defer store.Close()
 
-	err := store.LogCronExecution("", true, "output")
+	err := store.LogCronExecution("", 1, "output")
 	assert.Error(t, err)
 }
 
@@ -149,7 +149,7 @@ func TestSQLiteStore_LogCronExecution_TruncateOutput(t *testing.T) {
 		longOutput[i] = 'a'
 	}
 
-	err := store.LogCronExecution("truncate_test", true, string(longOutput))
+	err := store.LogCronExecution("truncate_test", 1, string(longOutput))
 	require.NoError(t, err)
 
 	history, err := store.GetCronHistory("truncate_test", nil, 0, 10, "desc", nil, nil)
@@ -159,7 +159,7 @@ func TestSQLiteStore_LogCronExecution_TruncateOutput(t *testing.T) {
 	expectedLength := 10000 - 50 + len(truncationMarker)
 
 	assert.Equal(t, expectedLength, len(history[0].Output),
-		"truncated output should be exactly %d bytes (9950 content + %d marker)", expectedLength, len(truncationMarker))
+		"truncaled output should be exactly %d bytes (9950 content + %d marker)", expectedLength, len(truncationMarker))
 	assert.True(t, len(history[0].Output) > 0 && history[0].Output[len(history[0].Output)-len(truncationMarker):] == truncationMarker,
 		"truncated output should end with truncation marker: %q", truncationMarker)
 }
@@ -168,16 +168,16 @@ func TestSQLiteStore_GetCronHistoryCount(t *testing.T) {
 	store := setupTestStore(t)
 	defer store.Close()
 
-	store.LogCronExecution("count_test", true, "success")
-	store.LogCronExecution("count_test", false, "failure")
-	store.LogCronExecution("other_job", true, "output")
+	store.LogCronExecution("count_test", 1, "success")
+	store.LogCronExecution("count_test", 0, "failure")
+	store.LogCronExecution("other_job", 1, "output")
 
 	count, err := store.GetCronHistoryCount("count_test", nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 2, count)
 
-	successTrue := true
-	count, err = store.GetCronHistoryCount("count_test", &successTrue, nil, nil)
+	statusSuccess := 1
+	count, err = store.GetCronHistoryCount("count_test", &statusSuccess, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count)
 
@@ -191,7 +191,7 @@ func TestSQLiteStore_GetCronHistory_Pagination(t *testing.T) {
 	defer store.Close()
 
 	for i := 0; i < 5; i++ {
-		store.LogCronExecution("pagination_test", true, "output")
+		store.LogCronExecution("pagination_test", 1, "output")
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -214,9 +214,9 @@ func TestSQLiteStore_GetCronHistory_SortOrder(t *testing.T) {
 
 	store.db.Exec("DELETE FROM cron_history")
 
-	store.LogCronExecution("sort_test", true, "first")
+	store.LogCronExecution("sort_test", 1, "first")
 	time.Sleep(50 * time.Millisecond)
-	store.LogCronExecution("sort_test", true, "second")
+	store.LogCronExecution("sort_test", 1, "second")
 
 	historyDesc, err := store.GetCronHistory("sort_test", nil, 0, 10, "desc", nil, nil)
 	require.NoError(t, err)
@@ -233,7 +233,7 @@ func TestSQLiteStore_GetCronHistory_DateFilter(t *testing.T) {
 
 	store.db.Exec("DELETE FROM cron_history")
 
-	store.LogCronExecution("date_test", true, "output")
+	store.LogCronExecution("date_test", 1, "output")
 
 	now := time.Now()
 	yesterday := now.AddDate(0, 0, -1)
