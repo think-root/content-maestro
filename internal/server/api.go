@@ -233,14 +233,18 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 
 	offset := (page - 1) * limit
 
-	var success *bool
+	var status *int
 	if successStr != "" {
 		successVal, err := strconv.ParseBool(successStr)
 		if err != nil {
 			http.Error(w, "Invalid success parameter", http.StatusBadRequest)
 			return
 		}
-		success = &successVal
+		statusVal := 0
+		if successVal {
+			statusVal = 1
+		}
+		status = &statusVal
 	}
 
 	startDate, endDate, err := validation.ParseDateRange(startDateStr, endDateStr)
@@ -249,13 +253,13 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalCount, err := api.store.GetCronHistoryCount(cronName, success, startDate, endDate)
+	totalCount, err := api.store.GetCronHistoryCount(cronName, status, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	history, err := api.store.GetCronHistory(cronName, success, offset, limit, sortOrder, startDate, endDate)
+	history, err := api.store.GetCronHistory(cronName, status, offset, limit, sortOrder, startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
