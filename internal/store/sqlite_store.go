@@ -71,7 +71,7 @@ func createTablesIfNotExist(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL,
 			timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			success INTEGER NOT NULL,
+			status INTEGER NOT NULL,
 			output TEXT
 		)`)
 	if err != nil {
@@ -94,6 +94,10 @@ func createTablesIfNotExist(db *sql.DB) error {
 
 	if err := migrateCollectSettingsSchema(db); err != nil {
 		return fmt.Errorf("failed to migrate collect_settings schema: %v", err)
+	}
+
+	if err := migrateCronHistorySuccessToStatus(db); err != nil {
+		return fmt.Errorf("failed to migrate cron_history success to status: %v", err)
 	}
 
 	_, err = db.Exec(`
@@ -190,6 +194,42 @@ func migrateCollectSettingsSchema(db *sql.DB) error {
 		if _, err := db.Exec("ALTER TABLE collect_settings ADD COLUMN language TEXT NOT NULL DEFAULT 'All'"); err != nil {
 			return fmt.Errorf("failed to add language column: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func migrateCronHistorySuccessToStatus(db *sql.DB) error {
+	rows, err := db.Query("PRAGMA table_info(cron_history)")
+	if err != nil {
+		return fmt.Errorf("failed to query table info: %v", err)
+	}
+	defer rows.Close()
+
+	hasSuccessColumn := false
+	hasStatusColumn := false
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notNull, pk int
+		var dfltValue interface{}
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
+			return fmt.Errorf("failed to scan table info: %v", err)
+		}
+		if name == "success" {
+			hasSuccessColumn = true
+		}
+		if name == "status" {
+			hasStatusColumn = true
+		}
+	}
+
+	if hasStatusColumn || !hasSuccessColumn {
+		return nil
+	}
+
+	if _, err := db.Exec("ALTER TABLE cron_history RENAME COLUMN success TO status"); err != nil {
+		return fmt.Errorf("failed to rename success column to status: %v", err)
 	}
 
 	return nil
@@ -316,7 +356,7 @@ func (s *SQLiteStore) LogCronExecution(name string, status int, output string) e
 
 	timestamp := time.Now()
 
-	query := "INSERT INTO cron_history (name, timestamp, success, output) VALUES (?, ?, ?, ?)"
+	query := "INSERT INTO cron_history (name, timestamp, status, output) VALUES (?, ?, ?, ?)"
 	_, err := s.db.Exec(query, name, timestamp, status, output)
 	if err != nil {
 		fmt.Printf("Failed to log cron execution to database: %v\n", err)
@@ -340,7 +380,7 @@ func (s *SQLiteStore) GetCronHistoryCount(name string, status *int, startDate, e
 		args = append(args, name)
 	}
 	if status != nil {
-		query += " AND success = ?"
+		query += " AND status = ?"
 		args = append(args, *status)
 	}
 	if startDate != nil {
@@ -361,7 +401,7 @@ func (s *SQLiteStore) GetCronHistoryCount(name string, status *int, startDate, e
 }
 
 func (s *SQLiteStore) GetCronHistory(name string, status *int, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error) {
-	query := "SELECT name, timestamp, success, output FROM cron_history WHERE 1=1"
+	query := "SELECT name, timestamp, status, output FROM cron_history WHERE 1=1"
 	args := []any{}
 
 	if name != "" {
@@ -369,7 +409,7 @@ func (s *SQLiteStore) GetCronHistory(name string, status *int, offset, limit int
 		args = append(args, name)
 	}
 	if status != nil {
-		query += " AND success = ?"
+		query += " AND status = ?"
 		args = append(args, *status)
 	}
 	if startDate != nil {
