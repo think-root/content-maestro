@@ -63,7 +63,7 @@ apis:
     token_env_var: "THREADS_API_KEY"
     token_header: "X-API-Key"
     content_type: "json"
-    timeout: 30
+    timeout: 90
     success_code: 200
     enabled: true
     response_type: "json"
