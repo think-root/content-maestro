@@ -212,7 +212,7 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 	cronName := r.URL.Query().Get("name")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
-	successStr := r.URL.Query().Get("success")
+	statusStr := r.URL.Query().Get("status")
 	sortOrder := r.URL.Query().Get("sort")
 	startDateStr := r.URL.Query().Get("start_date")
 	endDateStr := r.URL.Query().Get("end_date")
@@ -234,10 +234,10 @@ func (api *CronAPI) GetCronHistory(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * limit
 
 	var status *int
-	if successStr != "" {
-		statusVal, err := strconv.Atoi(successStr)
+	if statusStr != "" {
+		statusVal, err := strconv.Atoi(statusStr)
 		if err != nil || statusVal < 0 || statusVal > 2 {
-			http.Error(w, "Invalid success parameter: must be 0, 1, or 2", http.StatusBadRequest)
+			http.Error(w, "Invalid status parameter: must be 0, 1, or 2", http.StatusBadRequest)
 			return
 		}
 		status = &statusVal
