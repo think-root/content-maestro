@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/think-root/content-maestro/compare/v3.3.1...v3.4.0) (2026-01-18)
+
+
+### Features
+
+* Add handling for "partial" collection status, including debug logging and detailed messaging. ([1c296c1](https://github.com/think-root/content-maestro/commit/1c296c1590f66e18bc802495631bbfed5c822037))
+
 ## [3.3.1](https://github.com/think-root/content-maestro/compare/v3.3.0...v3.3.1) (2026-01-13)
 
 
