@@ -196,6 +196,13 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		if len(response.DontAdded) > 0 {
 			logMessage += fmt.Sprintf(" Already exists %d repositories.", len(response.DontAdded))
 		}
+	case "partial":
+		log.Debugf("Partially collected %d new repositories, %d failed", len(response.Added), len(response.DontAdded))
+		status = 2
+		logMessage = fmt.Sprintf("Partially collected %d repositories. Failed: %d.", len(response.Added), len(response.DontAdded))
+		if response.ErrorMessage != "" {
+			logMessage += fmt.Sprintf(" Error: %s", response.ErrorMessage)
+		}
 	case "error":
 		log.Error("API returned error status: %s", response.ErrorMessage)
 		status = 0
