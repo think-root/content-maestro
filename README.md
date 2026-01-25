@@ -85,25 +85,42 @@ go build -o content-maestro ./cmd/main.go
 
 ## External APIs Integration
 
-Content Maestro integrates with various external platforms (Twitter/X, Telegram, Bluesky, WhatsApp). The [apis-config.yml](internal/api/apis-config.yml) file contains configuration settings for these external APIs.
+Content Maestro integrates with various external platforms (Twitter/X, Telegram, Bluesky, WhatsApp). API configurations are now managed through the REST API endpoints, stored in the SQLite database.
 
-### Configuration Structure
+### Managing API Configurations
+
+API configurations can be managed through the following endpoints:
+
+- `GET /api/api-configs` - Retrieve all API configurations
+- `GET /api/api-configs/{name}` - Retrieve a specific API configuration
+- `POST /api/api-configs` - Create a new API configuration
+- `PUT /api/api-configs/{name}` - Update an existing API configuration
+- `DELETE /api/api-configs/{name}` - Delete an API configuration
+
+All requests require the `Authorization: Bearer <API_TOKEN>` header.
+
+### Configuration Fields
 
 Each API configuration contains the following fields:
 
+- `name`: Unique identifier for the API configuration
 - `url`: The endpoint URL with environment variable support (uses `{env.VAR}` syntax)
-- `method`: HTTP method for the request
-- `auth_type`: Authentication type ("bearer" or "api_key")
+- `method`: HTTP method for the request (GET, POST, PUT, DELETE, PATCH)
+- `auth_type`: Authentication type ("bearer", "api_key", or empty)
 - `token_env_var`: Environment variable name containing the auth token
 - `token_header`: Header name for API key (if auth_type is "api_key")
 - `content_type`: Request content type ("json" or "multipart")
-- `timeout`: Request timeout in seconds
-- `success_code`: Expected HTTP success response code
+- `timeout`: Request timeout in seconds (must be > 0)
+- `success_code`: Expected HTTP success response code (100-599)
 - `enabled`: Boolean flag to enable/disable the API
 - `response_type`: Expected response format
-- `socialify_image`: Boolean flag to enable/disable socialify image generation for this API
 - `text_language`: Optional language code for text content (e.g., "en", "uk")
-- `default_json_body`: Optional key/value pairs always added to JSON requests (supports `{env.VAR}` interpolation)
+- `socialify_image`: Boolean flag to enable/disable socialify image generation for this API
+- `default_json_body`: JSON string of key/value pairs always added to requests (supports `{env.VAR}` interpolation)
+
+### Migration from YAML
+
+On first startup (v3.5.0+), the application automatically migrates existing API configurations from `apis-config.yml` to the SQLite database. After migration, the YAML file is no longer used for runtime configuration but can be kept as a backup. All subsequent configuration changes should be made through the REST API endpoints.
 
 ## Application API
 

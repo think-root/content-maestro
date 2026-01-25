@@ -468,3 +468,312 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 - 400: Bad Request - Invalid parameters or date validation errors
 - 401: Unauthorized - Invalid or missing Bearer token
 - 500: Internal Server Error - Database or server error
+
+## API Configurations Management
+
+### /api/api-configs
+
+**Endpoint:** `/api/api-configs`
+
+**Method:** `GET`
+
+**Description:** Retrieve all API configurations for external integrations (Twitter, Telegram, Bluesky, etc.).
+
+**Curl Example:**
+
+```bash
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/api-configs
+```
+
+**Response Example:**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "twitter",
+    "url": "{env.TWITTER_URL}/x/api/posts/create",
+    "method": "POST",
+    "auth_type": "api_key",
+    "token_env_var": "TWITTER_API_KEY",
+    "token_header": "X-API-Key",
+    "content_type": "multipart",
+    "timeout": 30,
+    "success_code": 200,
+    "enabled": true,
+    "response_type": "json",
+    "text_language": "en",
+    "socialify_image": false,
+    "default_json_body": "",
+    "updated_at": "2024-03-15T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "telegram",
+    "url": "{env.TELEGRAM_SERVER_URL}/telegram/send-message",
+    "method": "POST",
+    "auth_type": "api_key",
+    "token_env_var": "TELEGRAM_SERVER_TOKEN",
+    "token_header": "X-API-Key",
+    "content_type": "multipart",
+    "timeout": 30,
+    "success_code": 200,
+    "enabled": true,
+    "response_type": "json",
+    "text_language": "uk",
+    "socialify_image": true,
+    "default_json_body": "",
+    "updated_at": "2024-03-15T10:00:00Z"
+  }
+]
+```
+
+### /api/api-configs/{name}
+
+**Endpoint:** `/api/api-configs/{name}`
+
+**Method:** `GET`
+
+**Description:** Retrieve a specific API configuration by name.
+
+**Curl Example:**
+
+```bash
+curl -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/api-configs/twitter
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "name": "twitter",
+  "url": "{env.TWITTER_URL}/x/api/posts/create",
+  "method": "POST",
+  "auth_type": "api_key",
+  "token_env_var": "TWITTER_API_KEY",
+  "token_header": "X-API-Key",
+  "content_type": "multipart",
+  "timeout": 30,
+  "success_code": 200,
+  "enabled": true,
+  "response_type": "json",
+  "text_language": "en",
+  "socialify_image": false,
+  "default_json_body": "",
+  "updated_at": "2024-03-15T10:00:00Z"
+}
+```
+
+### /api/api-configs (create)
+
+**Endpoint:** `/api/api-configs`
+
+**Method:** `POST`
+
+**Description:** Create a new API configuration for external integration.
+
+**Curl Example:**
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bluesky",
+    "url": "{env.BLUESKY_URL}/bluesky/api/posts/create",
+    "method": "POST",
+    "auth_type": "api_key",
+    "token_env_var": "BLUESKY_SERVER_KEY",
+    "token_header": "X-API-Key",
+    "content_type": "multipart",
+    "timeout": 30,
+    "success_code": 200,
+    "enabled": true,
+    "response_type": "json",
+    "text_language": "en",
+    "socialify_image": false,
+    "default_json_body": ""
+  }' \
+  http://localhost:8080/api/api-configs
+```
+
+**Request Parameters:**
+
+| Parameter           | Type    | Required | Description                                                                      |
+| ------------------- | ------- | -------- | -------------------------------------------------------------------------------- |
+| `name`              | string  | Yes      | Unique identifier for the API (alphanumeric, hyphens, underscores only)          |
+| `url`               | string  | Yes      | The endpoint URL (supports `{env.VAR}` syntax)                                   |
+| `method`            | string  | Yes      | HTTP method (GET, POST, PUT, DELETE, PATCH)                                      |
+| `auth_type`         | string  | No       | Authentication type: `bearer`, `api_key`, or empty                               |
+| `token_env_var`     | string  | No       | Environment variable name containing the auth token                              |
+| `token_header`      | string  | No       | Header name for API key (required if `auth_type` is `api_key`)                   |
+| `content_type`      | string  | Yes      | Request content type: `json` or `multipart`                                      |
+| `timeout`           | integer | Yes      | Request timeout in seconds (must be > 0)                                         |
+| `success_code`      | integer | Yes      | Expected HTTP success code (100-599)                                             |
+| `enabled`           | boolean | Yes      | Whether the API is enabled                                                       |
+| `response_type`     | string  | No       | Expected response format                                                         |
+| `text_language`     | string  | No       | Language code for text content (e.g., `en`, `uk`)                                |
+| `socialify_image`   | boolean | Yes      | Whether to generate socialify images                                             |
+| `default_json_body` | string  | No       | JSON string of default key/value pairs (supports `{env.VAR}`)                    |
+
+**Request Example:**
+
+```json
+{
+  "name": "bluesky",
+  "url": "{env.BLUESKY_URL}/bluesky/api/posts/create",
+  "method": "POST",
+  "auth_type": "api_key",
+  "token_env_var": "BLUESKY_SERVER_KEY",
+  "token_header": "X-API-Key",
+  "content_type": "multipart",
+  "timeout": 30,
+  "success_code": 200,
+  "enabled": true,
+  "response_type": "json",
+  "text_language": "en",
+  "socialify_image": false,
+  "default_json_body": ""
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 3,
+  "name": "bluesky",
+  "url": "{env.BLUESKY_URL}/bluesky/api/posts/create",
+  "method": "POST",
+  "auth_type": "api_key",
+  "token_env_var": "BLUESKY_SERVER_KEY",
+  "token_header": "X-API-Key",
+  "content_type": "multipart",
+  "timeout": 30,
+  "success_code": 200,
+  "enabled": true,
+  "response_type": "json",
+  "text_language": "en",
+  "socialify_image": false,
+  "default_json_body": "",
+  "updated_at": "2024-03-15T10:00:00Z"
+}
+```
+
+### /api/api-configs/{name} (update)
+
+**Endpoint:** `/api/api-configs/{name}`
+
+**Method:** `PUT`
+
+**Description:** Update an existing API configuration. All fields are optional - only provide the fields you want to update.
+
+**Curl Example:**
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": false,
+    "timeout": 60
+  }' \
+  http://localhost:8080/api/api-configs/twitter
+```
+
+**Request Parameters:**
+
+All fields are optional. Only include the fields you want to update.
+
+| Parameter           | Type    | Description                                                                      |
+| ------------------- | ------- | -------------------------------------------------------------------------------- |
+| `url`               | string  | The endpoint URL (supports `{env.VAR}` syntax)                                   |
+| `method`            | string  | HTTP method (GET, POST, PUT, DELETE, PATCH)                                      |
+| `auth_type`         | string  | Authentication type: `bearer`, `api_key`, or empty                               |
+| `token_env_var`     | string  | Environment variable name containing the auth token                              |
+| `token_header`      | string  | Header name for API key                                                          |
+| `content_type`      | string  | Request content type: `json` or `multipart`                                      |
+| `timeout`           | integer | Request timeout in seconds (must be > 0)                                         |
+| `success_code`      | integer | Expected HTTP success code (100-599)                                             |
+| `enabled`           | boolean | Whether the API is enabled                                                       |
+| `response_type`     | string  | Expected response format                                                         |
+| `text_language`     | string  | Language code for text content (e.g., `en`, `uk`)                                |
+| `socialify_image`   | boolean | Whether to generate socialify images                                             |
+| `default_json_body` | string  | JSON string of default key/value pairs (supports `{env.VAR}`)                    |
+
+**Request Example:**
+
+```json
+{
+  "enabled": false,
+  "timeout": 60,
+  "text_language": "es"
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "id": 1,
+  "name": "twitter",
+  "url": "{env.TWITTER_URL}/x/api/posts/create",
+  "method": "POST",
+  "auth_type": "api_key",
+  "token_env_var": "TWITTER_API_KEY",
+  "token_header": "X-API-Key",
+  "content_type": "multipart",
+  "timeout": 60,
+  "success_code": 200,
+  "enabled": false,
+  "response_type": "json",
+  "text_language": "es",
+  "socialify_image": false,
+  "default_json_body": "",
+  "updated_at": "2024-03-15T11:00:00Z"
+}
+```
+
+### /api/api-configs/{name} (delete)
+
+**Endpoint:** `/api/api-configs/{name}`
+
+**Method:** `DELETE`
+
+**Description:** Delete an API configuration.
+
+**Curl Example:**
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  http://localhost:8080/api/api-configs/twitter
+```
+
+**Response Example:**
+
+```json
+{
+  "status": "success",
+  "message": "API config deleted successfully"
+}
+```
+
+**API Configuration Notes:**
+
+- **Environment Variables:** Use `{env.VARIABLE_NAME}` syntax in `url` and `default_json_body` fields to reference environment variables
+- **Default JSON Body:** For APIs with `content_type: json`, you can specify default key/value pairs that are always included in requests. Store as a JSON string, e.g., `{"type": "chat", "jid": "{env.WAPP_JID}"}`
+- **Auto-Reload:** After creating, updating, or deleting an API configuration, the system automatically reloads all configurations to apply changes immediately
+- **Migration:** On first startup (v3.4.0+), existing configurations from `apis-config.yml` are automatically migrated to the database
+
+**Status Codes:**
+
+- 200: Success (GET, PUT)
+- 201: Created (POST)
+- 400: Bad Request - Invalid parameters or validation errors
+- 401: Unauthorized - Invalid or missing Bearer token
+- 404: Not Found - API configuration does not exist (GET, PUT, DELETE)
+- 500: Internal Server Error - Database or server error
