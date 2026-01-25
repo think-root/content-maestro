@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"content-maestro/internal/logger"
+	"content-maestro/internal/store"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,9 +13,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 var log = logger.NewLogger()
@@ -61,33 +61,76 @@ type APIResponse struct {
 	Timestamp    time.Time     `json:"timestamp"`
 }
 
-var apiConfig *APIConfig
+var (
+	apiConfig   *APIConfig
+	apiConfigMu sync.RWMutex
+)
 
 func GetAPIConfigs() *APIConfig {
+	apiConfigMu.RLock()
+	defer apiConfigMu.RUnlock()
 	return apiConfig
 }
 
-func LoadAPIConfigs(configPath string) error {
-	data, err := os.ReadFile(configPath)
+func LoadAPIConfigs(s store.StoreInterface) error {
+	configs, err := s.GetAllAPIConfigs()
 	if err != nil {
-		return fmt.Errorf("failed to read config file: %w", err)
+		return fmt.Errorf("failed to get API configs from database: %w", err)
 	}
 
-	config := &APIConfig{}
-	if err := yaml.Unmarshal(data, config); err != nil {
-		return fmt.Errorf("failed to parse config file: %w", err)
+	// Build the complete new config locally before publishing
+	newConfig := &APIConfig{
+		APIs: make(map[string]APIEndpoint),
 	}
 
-	apiConfig = config
+	for _, config := range configs {
+		var defaultJSONBody map[string]string
+		if config.DefaultJSONBody != "" {
+			if err := json.Unmarshal([]byte(config.DefaultJSONBody), &defaultJSONBody); err != nil {
+				return fmt.Errorf("failed to parse default_json_body for %s: %w", config.Name, err)
+			}
+		}
+
+		newConfig.APIs[config.Name] = APIEndpoint{
+			URL:             config.URL,
+			Method:          config.Method,
+			AuthType:        config.AuthType,
+			TokenEnvVar:     config.TokenEnvVar,
+			TokenHeader:     config.TokenHeader,
+			ContentType:     config.ContentType,
+			Timeout:         config.Timeout,
+			SuccessCode:     config.SuccessCode,
+			Enabled:         config.Enabled,
+			ResponseType:    config.ResponseType,
+			TextLanguage:    config.TextLanguage,
+			SocialifyImage:  config.SocialifyImage,
+			DefaultJSONBody: defaultJSONBody,
+		}
+	}
+
+	// Atomically publish the fully populated config
+	apiConfigMu.Lock()
+	apiConfig = newConfig
+	apiConfigMu.Unlock()
+
 	return nil
 }
 
+func ReloadAPIConfigs(s store.StoreInterface) error {
+	return LoadAPIConfigs(s)
+}
+
 func ExecuteRequest(reqConfig RequestConfig) (*APIResponse, error) {
+	// Safely read the API endpoint config under lock
+	apiConfigMu.RLock()
 	if apiConfig == nil {
+		apiConfigMu.RUnlock()
 		return nil, fmt.Errorf("API configuration not loaded, call LoadAPIConfigs first")
 	}
 
 	apiEndpoint, exists := apiConfig.APIs[reqConfig.APIName]
+	apiConfigMu.RUnlock()
+
 	if !exists {
 		return nil, fmt.Errorf("API endpoint '%s' not found in configuration", reqConfig.APIName)
 	}
