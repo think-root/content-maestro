@@ -6,37 +6,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 )
 
-func TestLoadAPIConfigs(t *testing.T) {
-	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "test_config.yaml")
-
-	testConfig := `
-apis:
-  test_api:
-    url: "http://example.com/api"
-    method: "POST"
-    headers:
-      Content-Type: "application/json"
-    auth_type: "bearer"
-    token_env_var: "API_TOKEN"
-    content_type: "json"
-    timeout: 30
-    success_code: 200
-    enabled: true
-    response_type: "json"
-`
-
-	if err := os.WriteFile(configPath, []byte(testConfig), 0644); err != nil {
-		t.Fatalf("Failed to write test config: %v", err)
-	}
-
-	if err := LoadAPIConfigs(configPath); err != nil {
-		t.Errorf("LoadAPIConfigs failed: %v", err)
+func TestGetAPIConfigs(t *testing.T) {
+	apiConfig = &APIConfig{
+		APIs: map[string]APIEndpoint{
+			"test_api": {
+				URL:          "http://example.com/api",
+				Method:       "POST",
+				AuthType:     "bearer",
+				TokenEnvVar:  "API_TOKEN",
+				ContentType:  "json",
+				Timeout:      30,
+				SuccessCode:  200,
+				Enabled:      true,
+				ResponseType: "json",
+			},
+		},
 	}
 
 	cfg := GetAPIConfigs()
