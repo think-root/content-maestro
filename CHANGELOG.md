@@ -1,3 +1,15 @@
+# [3.5.0](https://github.com/think-root/content-maestro/compare/v3.4.0...v3.5.0) (2026-01-25)
+
+
+### Features
+
+* **api:** add CRUD API config management endpoints to CronAPI ([14b6da4](https://github.com/think-root/content-maestro/commit/14b6da4141b3316cb936935309b4e0b78e987695))
+* **api:** load API configs and expose endpoints ([3a2d7db](https://github.com/think-root/content-maestro/commit/3a2d7db4d3d884cc021bda63455961b6038b9a51))
+* **models:** add API config request structs ([024fbfb](https://github.com/think-root/content-maestro/commit/024fbfb1b7cf737ab0072bff92f31b2a7d3f5810))
+* **store:** add API config methods to store interface ([cff27f0](https://github.com/think-root/content-maestro/commit/cff27f07cbd000b13afc5385d1d961fc4b6bd771))
+* **store:** add sqlite CRUD operations and YAML migration for API configs ([ab5ecc9](https://github.com/think-root/content-maestro/commit/ab5ecc98fe20c1c381d1c972702136a207b3438c))
+* **validation:** add API config validation functions ([45b7139](https://github.com/think-root/content-maestro/commit/45b71394248c816f8214939e20c4f03eea1c7639))
+
 # [3.4.0](https://github.com/think-root/content-maestro/compare/v3.3.1...v3.4.0) (2026-01-18)
 
 
