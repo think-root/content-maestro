@@ -37,7 +37,7 @@ apis:
     content_type: "multipart"
     timeout: 30
     success_code: 200
-    enabled: true
+    enabled: false
     response_type: "json"
     text_language: "uk"
     socialify_image: true
