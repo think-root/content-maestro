@@ -3,10 +3,13 @@ package store
 import (
 	"content-maestro/internal/models"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	_ "modernc.org/sqlite"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -156,6 +159,33 @@ func createTablesIfNotExist(db *sql.DB) error {
 		WHERE NOT EXISTS (SELECT 1 FROM prompt)`)
 	if err != nil {
 		return fmt.Errorf("failed to insert default prompt settings: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS api_configs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL UNIQUE,
+			url TEXT NOT NULL,
+			method TEXT NOT NULL,
+			auth_type TEXT,
+			token_env_var TEXT,
+			token_header TEXT,
+			content_type TEXT NOT NULL,
+			timeout INTEGER NOT NULL DEFAULT 30,
+			success_code INTEGER NOT NULL DEFAULT 200,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			response_type TEXT,
+			text_language TEXT,
+			socialify_image INTEGER NOT NULL DEFAULT 0,
+			default_json_body TEXT,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`)
+	if err != nil {
+		return fmt.Errorf("failed to create api_configs table: %v", err)
+	}
+
+	if err := migrateYAMLToDatabase(db); err != nil {
+		return fmt.Errorf("failed to migrate YAML to database: %v", err)
 	}
 
 	return nil
@@ -539,4 +569,268 @@ func (s *SQLiteStore) UpdatePromptSettings(settings *models.UpdatePromptSettings
 
 	_, err := s.db.Exec(query, args...)
 	return err
+}
+
+func migrateYAMLToDatabase(db *sql.DB) error {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM api_configs").Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to check api_configs table: %v", err)
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	yamlPath := "./internal/api/apis-config.yml"
+	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	data, err := os.ReadFile(yamlPath)
+	if err != nil {
+		return fmt.Errorf("failed to read YAML config: %v", err)
+	}
+
+	type YAMLAPIEndpoint struct {
+		URL             string            `yaml:"url"`
+		Method          string            `yaml:"method"`
+		AuthType        string            `yaml:"auth_type"`
+		TokenEnvVar     string            `yaml:"token_env_var"`
+		TokenHeader     string            `yaml:"token_header"`
+		ContentType     string            `yaml:"content_type"`
+		Timeout         int               `yaml:"timeout"`
+		SuccessCode     int               `yaml:"success_code"`
+		Enabled         bool              `yaml:"enabled"`
+		ResponseType    string            `yaml:"response_type"`
+		TextLanguage    string            `yaml:"text_language"`
+		SocialifyImage  bool              `yaml:"socialify_image"`
+		DefaultJSONBody map[string]string `yaml:"default_json_body"`
+	}
+
+	type YAMLAPIConfig struct {
+		APIs map[string]YAMLAPIEndpoint `yaml:"apis"`
+	}
+
+	var config YAMLAPIConfig
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse YAML config: %v", err)
+	}
+
+	for name, endpoint := range config.APIs {
+		var defaultJSONBodyStr string
+		if len(endpoint.DefaultJSONBody) > 0 {
+			jsonBytes, err := json.Marshal(endpoint.DefaultJSONBody)
+			if err != nil {
+				return fmt.Errorf("failed to marshal default_json_body for %s: %v", name, err)
+			}
+			defaultJSONBodyStr = string(jsonBytes)
+		}
+
+		query := `
+			INSERT INTO api_configs (name, url, method, auth_type, token_env_var, token_header,
+				content_type, timeout, success_code, enabled, response_type, text_language,
+				socialify_image, default_json_body, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+
+		_, err := db.Exec(query, name, endpoint.URL, endpoint.Method, endpoint.AuthType,
+			endpoint.TokenEnvVar, endpoint.TokenHeader, endpoint.ContentType, endpoint.Timeout,
+			endpoint.SuccessCode, boolToInt(endpoint.Enabled), endpoint.ResponseType,
+			endpoint.TextLanguage, boolToInt(endpoint.SocialifyImage), defaultJSONBodyStr)
+		if err != nil {
+			return fmt.Errorf("failed to insert API config %s: %v", name, err)
+		}
+	}
+
+	fmt.Printf("Successfully migrated %d API configurations from YAML to database\n", len(config.APIs))
+	return nil
+}
+
+func (s *SQLiteStore) GetAPIConfig(name string) (*models.APIConfigModel, error) {
+	var config models.APIConfigModel
+	var enabled, socialifyImage int
+
+	query := `SELECT id, name, url, method, auth_type, token_env_var, token_header,
+		content_type, timeout, success_code, enabled, response_type, text_language,
+		socialify_image, default_json_body, updated_at
+		FROM api_configs WHERE name = ?`
+
+	err := s.db.QueryRow(query, name).Scan(
+		&config.ID, &config.Name, &config.URL, &config.Method, &config.AuthType,
+		&config.TokenEnvVar, &config.TokenHeader, &config.ContentType, &config.Timeout,
+		&config.SuccessCode, &enabled, &config.ResponseType, &config.TextLanguage,
+		&socialifyImage, &config.DefaultJSONBody, &config.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get API config: %v", err)
+	}
+
+	config.Enabled = enabled == 1
+	config.SocialifyImage = socialifyImage == 1
+
+	return &config, nil
+}
+
+func (s *SQLiteStore) GetAllAPIConfigs() ([]models.APIConfigModel, error) {
+	var configs []models.APIConfigModel
+
+	query := `SELECT id, name, url, method, auth_type, token_env_var, token_header,
+		content_type, timeout, success_code, enabled, response_type, text_language,
+		socialify_image, default_json_body, updated_at
+		FROM api_configs ORDER BY name`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all API configs: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var config models.APIConfigModel
+		var enabled, socialifyImage int
+
+		if err := rows.Scan(&config.ID, &config.Name, &config.URL, &config.Method,
+			&config.AuthType, &config.TokenEnvVar, &config.TokenHeader, &config.ContentType,
+			&config.Timeout, &config.SuccessCode, &enabled, &config.ResponseType,
+			&config.TextLanguage, &socialifyImage, &config.DefaultJSONBody, &config.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan API config: %v", err)
+		}
+
+		config.Enabled = enabled == 1
+		config.SocialifyImage = socialifyImage == 1
+
+		configs = append(configs, config)
+	}
+
+	return configs, nil
+}
+
+func (s *SQLiteStore) CreateAPIConfig(config *models.CreateAPIConfigRequest) (*models.APIConfigModel, error) {
+	query := `
+		INSERT INTO api_configs (name, url, method, auth_type, token_env_var, token_header,
+			content_type, timeout, success_code, enabled, response_type, text_language,
+			socialify_image, default_json_body, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+
+	_, err := s.db.Exec(query, config.Name, config.URL, config.Method, config.AuthType,
+		config.TokenEnvVar, config.TokenHeader, config.ContentType, config.Timeout,
+		config.SuccessCode, boolToInt(config.Enabled), config.ResponseType,
+		config.TextLanguage, boolToInt(config.SocialifyImage), config.DefaultJSONBody)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API config: %v", err)
+	}
+
+	return s.GetAPIConfig(config.Name)
+}
+
+func (s *SQLiteStore) UpdateAPIConfig(name string, config *models.UpdateAPIConfigRequest) (*models.APIConfigModel, error) {
+	query := `UPDATE api_configs SET updated_at = ?`
+	args := []interface{}{time.Now()}
+
+	if config.URL != nil {
+		query += ", url = ?"
+		args = append(args, *config.URL)
+	}
+
+	if config.Method != nil {
+		query += ", method = ?"
+		args = append(args, *config.Method)
+	}
+
+	if config.AuthType != nil {
+		query += ", auth_type = ?"
+		args = append(args, *config.AuthType)
+	}
+
+	if config.TokenEnvVar != nil {
+		query += ", token_env_var = ?"
+		args = append(args, *config.TokenEnvVar)
+	}
+
+	if config.TokenHeader != nil {
+		query += ", token_header = ?"
+		args = append(args, *config.TokenHeader)
+	}
+
+	if config.ContentType != nil {
+		query += ", content_type = ?"
+		args = append(args, *config.ContentType)
+	}
+
+	if config.Timeout != nil {
+		query += ", timeout = ?"
+		args = append(args, *config.Timeout)
+	}
+
+	if config.SuccessCode != nil {
+		query += ", success_code = ?"
+		args = append(args, *config.SuccessCode)
+	}
+
+	if config.Enabled != nil {
+		query += ", enabled = ?"
+		args = append(args, boolToInt(*config.Enabled))
+	}
+
+	if config.ResponseType != nil {
+		query += ", response_type = ?"
+		args = append(args, *config.ResponseType)
+	}
+
+	if config.TextLanguage != nil {
+		query += ", text_language = ?"
+		args = append(args, *config.TextLanguage)
+	}
+
+	if config.SocialifyImage != nil {
+		query += ", socialify_image = ?"
+		args = append(args, boolToInt(*config.SocialifyImage))
+	}
+
+	if config.DefaultJSONBody != nil {
+		query += ", default_json_body = ?"
+		args = append(args, *config.DefaultJSONBody)
+	}
+
+	query += " WHERE name = ?"
+	args = append(args, name)
+
+	result, err := s.db.Exec(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update API config: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows affected: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("API config '%s' not found", name)
+	}
+
+	return s.GetAPIConfig(name)
+}
+
+func (s *SQLiteStore) DeleteAPIConfig(name string) error {
+	query := "DELETE FROM api_configs WHERE name = ?"
+	result, err := s.db.Exec(query, name)
+	if err != nil {
+		return fmt.Errorf("failed to delete API config: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("API config '%s' not found", name)
+	}
+
+	return nil
 }
