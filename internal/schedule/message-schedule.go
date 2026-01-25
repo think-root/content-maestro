@@ -36,18 +36,18 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	}()
 
-	err := api.LoadAPIConfigs("./internal/api/apis-config.yml")
-	if err != nil {
-		log.Error("Failed to load API configurations: %v", err)
+	apiConfigs := api.GetAPIConfigs()
+	if apiConfigs == nil {
+		log.Error("API configurations not loaded")
 		status = 0
-		logMessage = fmt.Sprintf("Failed to load API configurations: %v", err)
+		logMessage = "API configurations not loaded"
 		return
 	}
 
 	var image_name string
 
 	needsImage := false
-	for _, endpoint := range api.GetAPIConfigs().APIs {
+	for _, endpoint := range apiConfigs.APIs {
 		if endpoint.Enabled && endpoint.SocialifyImage {
 			needsImage = true
 			break
@@ -55,7 +55,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	}
 
 	if needsImage {
-		for _, endpoint := range api.GetAPIConfigs().APIs {
+		for _, endpoint := range apiConfigs.APIs {
 			if !endpoint.Enabled || !endpoint.SocialifyImage {
 				continue
 			}
@@ -102,7 +102,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	var errorMessages []string
 	var updatedURL string
 
-	for apiName, endpoint := range api.GetAPIConfigs().APIs {
+	for apiName, endpoint := range apiConfigs.APIs {
 		if !endpoint.Enabled {
 			continue
 		}
@@ -238,7 +238,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	}
 
-	err = utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
+	err := utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
 	if err != nil {
 		log.Error(err)
 		status = 0
