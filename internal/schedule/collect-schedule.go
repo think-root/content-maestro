@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -39,6 +40,42 @@ type generateResponse struct {
 	Added        []string `json:"added"`
 	DontAdded    []string `json:"dont_added"`
 	ErrorMessage string   `json:"error_message"`
+}
+
+const maxOutputLength = 10000
+
+func formatRepositoryList(repos []string, maxLength int) string {
+	if len(repos) == 0 {
+		return ""
+	}
+
+	fullList := strings.Join(repos, ", ")
+	if len(fullList) <= maxLength {
+		return fullList
+	}
+
+	included := []string{}
+	currentLength := 0
+
+	for i, repo := range repos {
+		testLength := currentLength + len(repo)
+		if i > 0 {
+			testLength += 2
+		}
+
+		remaining := len(repos) - i
+		suffixLength := len(fmt.Sprintf(" and %d more", remaining))
+
+		if testLength+suffixLength > maxLength {
+			suffix := fmt.Sprintf(" and %d more", remaining)
+			return strings.Join(included, ", ") + suffix
+		}
+
+		included = append(included, repo)
+		currentLength = testLength
+	}
+
+	return strings.Join(included, ", ")
 }
 
 func getContentAlchemistTimeout() time.Duration {
@@ -199,9 +236,16 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 	case "partial":
 		log.Debugf("Partially collected %d new repositories, %d failed", len(response.Added), len(response.DontAdded))
 		status = 2
-		logMessage = fmt.Sprintf("Partially collected %d repositories. Failed: %d.", len(response.Added), len(response.DontAdded))
+		logMessage = fmt.Sprintf("Partially collected %d repositories. Failed: %d", len(response.Added), len(response.DontAdded))
+
+		if len(response.DontAdded) > 0 {
+			availableSpace := maxOutputLength - len(logMessage) - 200 // Reserve space for error message
+			failedRepos := formatRepositoryList(response.DontAdded, availableSpace)
+			logMessage += fmt.Sprintf(" (%s)", failedRepos)
+		}
+
 		if response.ErrorMessage != "" {
-			logMessage += fmt.Sprintf(" Error: %s", response.ErrorMessage)
+			logMessage += fmt.Sprintf(". Error: %s", response.ErrorMessage)
 		}
 	case "error":
 		log.Error("API returned error status: %s", response.ErrorMessage)
@@ -211,8 +255,11 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		} else {
 			logMessage = "API returned error status without error message"
 		}
+
 		if len(response.DontAdded) > 0 {
-			logMessage += fmt.Sprintf(". Failed repositories: %v", response.DontAdded)
+			availableSpace := maxOutputLength - len(logMessage) - 50
+			failedRepos := formatRepositoryList(response.DontAdded, availableSpace)
+			logMessage += fmt.Sprintf(". Failed repositories: %s", failedRepos)
 		}
 	default:
 		log.Error("API returned unknown status: %s", response.Status)
