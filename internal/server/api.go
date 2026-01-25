@@ -1,10 +1,12 @@
 package server
 
 import (
+	apiExecutor "content-maestro/internal/api"
 	"content-maestro/internal/models"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -346,6 +348,145 @@ func (api *CronAPI) HandlePromptSettings(w http.ResponseWriter, r *http.Request)
 		api.GetPromptSettings(w, r)
 	case http.MethodPut:
 		api.UpdatePromptSettings(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (api *CronAPI) GetAPIConfigs(w http.ResponseWriter, r *http.Request) {
+	configs, err := api.store.GetAllAPIConfigs()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(configs)
+}
+
+func (api *CronAPI) GetAPIConfig(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/api-configs/")
+
+	config, err := api.store.GetAPIConfig(name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if config == nil {
+		http.Error(w, "API config not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(config)
+}
+
+func (api *CronAPI) CreateAPIConfig(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateAPIConfigRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validation.ValidateAPIConfig(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	config, err := api.store.CreateAPIConfig(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := apiExecutor.ReloadAPIConfigs(api.store); err != nil {
+		http.Error(w, fmt.Sprintf("API config created but failed to reload: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(config)
+}
+
+func (api *CronAPI) UpdateAPIConfig(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/api-configs/")
+
+	var req models.UpdateAPIConfigRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := validation.ValidateAPIConfigUpdate(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	config, err := api.store.UpdateAPIConfig(name, &req)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if err := apiExecutor.ReloadAPIConfigs(api.store); err != nil {
+		http.Error(w, fmt.Sprintf("API config updated but failed to reload: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(config)
+}
+
+func (api *CronAPI) DeleteAPIConfig(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/api/api-configs/")
+
+	if err := api.store.DeleteAPIConfig(name); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if err := apiExecutor.ReloadAPIConfigs(api.store); err != nil {
+		http.Error(w, fmt.Sprintf("API config deleted but failed to reload: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.CronResponse{
+		Status:  "success",
+		Message: "API config deleted successfully",
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (api *CronAPI) HandleAPIConfigs(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		api.GetAPIConfigs(w, r)
+	case http.MethodPost:
+		api.CreateAPIConfig(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (api *CronAPI) HandleAPIConfig(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		api.GetAPIConfig(w, r)
+	case http.MethodPut:
+		api.UpdateAPIConfig(w, r)
+	case http.MethodDelete:
+		api.DeleteAPIConfig(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
