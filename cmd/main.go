@@ -1,6 +1,7 @@
 package main
 
 import (
+	"content-maestro/internal/api"
 	"content-maestro/internal/logger"
 	"content-maestro/internal/middleware"
 	"content-maestro/internal/models"
@@ -57,6 +58,12 @@ func main() {
 	defer storeInstance.Close()
 	log.Debug("SQLite store initialized successfully")
 
+	if err := api.LoadAPIConfigs(storeInstance); err != nil {
+		log.Errorf("Error loading API configurations: %v", err)
+		return
+	}
+	log.Debug("API configurations loaded successfully")
+
 	pgConfig := store.GetPostgresConfigFromEnv()
 	shouldMigrate, err := store.ShouldMigrate(sqliteStore, pgConfig)
 	if err != nil {
@@ -104,6 +111,8 @@ func main() {
 	mux.Handle("/api/collect-settings", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.HandleCollectSettings)))))
 	mux.Handle("/api/prompt-settings", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.HandlePromptSettings)))))
 	mux.Handle("/api/cron-history", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.GetCronHistory)))))
+	mux.Handle("/api/api-configs", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.HandleAPIConfigs)))))
+	mux.Handle("/api/api-configs/", middleware.LoggingMiddleware(middleware.CorsMiddleware(middleware.AuthMiddleware(http.HandlerFunc(cronAPI.HandleAPIConfig)))))
 
 	fs := http.FileServer(http.Dir("./tmp/gh_project_img"))
 	mux.Handle("/images/", http.StripPrefix("/images/", fs))
