@@ -18,4 +18,9 @@ type StoreInterface interface {
 	UpdateCollectSettings(settings *CollectSettings) error
 	GetPromptSettings() (*models.PromptSettings, error)
 	UpdatePromptSettings(settings *models.UpdatePromptSettingsRequest) error
+	GetAPIConfig(name string) (*models.APIConfigModel, error)
+	GetAllAPIConfigs() ([]models.APIConfigModel, error)
+	CreateAPIConfig(config *models.CreateAPIConfigRequest) (*models.APIConfigModel, error)
+	UpdateAPIConfig(name string, config *models.UpdateAPIConfigRequest) (*models.APIConfigModel, error)
+	DeleteAPIConfig(name string) error
 }
