@@ -470,6 +470,8 @@ func (api *CronAPI) DeleteAPIConfig(w http.ResponseWriter, r *http.Request) {
 
 func (api *CronAPI) HandleAPIConfigs(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
+	case http.MethodOptions:
+		return
 	case http.MethodGet:
 		api.GetAPIConfigs(w, r)
 	case http.MethodPost:
@@ -481,6 +483,8 @@ func (api *CronAPI) HandleAPIConfigs(w http.ResponseWriter, r *http.Request) {
 
 func (api *CronAPI) HandleAPIConfig(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
+	case http.MethodOptions:
+		return
 	case http.MethodGet:
 		api.GetAPIConfig(w, r)
 	case http.MethodPut:
