@@ -42,7 +42,7 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 ]
 ```
 
-### /api/crons/{name}/schedule
+### /api/crons//schedule
 
 **Endpoint:** `/api/crons/{name}/schedule`
 
@@ -62,10 +62,10 @@ curl -X PUT \
 
 **Request Parameters:**
 
-| Parameter  | Type   | Required | Description                                   |
-| ---------- | ------ | -------- | --------------------------------------------- |
-| `name`     | string | Yes      | Cron job name (`collect` or `message`)        |
-| `schedule` | string | Yes      | Cron schedule expression (e.g., `0 15 * * 6`) |
+| Parameter    | Type   | Required | Description                                    |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| `name`     | string | Yes      | Cron job name (`collect` or `message`)     |
+| `schedule` | string | Yes      | Cron schedule expression (e.g.,`0 15 * * 6`) |
 
 **Request Example:**
 
@@ -84,7 +84,7 @@ curl -X PUT \
 }
 ```
 
-### /api/crons/{name}/status
+### /api/crons//status
 
 **Endpoint:** `/api/crons/{name}/status`
 
@@ -104,10 +104,10 @@ curl -X PUT \
 
 **Request Parameters:**
 
-| Parameter   | Type    | Required | Description                              |
-| ----------- | ------- | -------- | ---------------------------------------- |
-| `name`      | string  | Yes      | Cron job name (`collect` or `message`)   |
-| `is_active` | boolean | Yes      | Enable (true) or disable (false) the job |
+| Parameter     | Type    | Required | Description                                |
+| ------------- | ------- | -------- | ------------------------------------------ |
+| `name`      | string  | Yes      | Cron job name (`collect` or `message`) |
+| `is_active` | boolean | Yes      | Enable (true) or disable (false) the job   |
 
 **Request Example:**
 
@@ -187,14 +187,14 @@ curl -X PUT \
 
 **Request Parameters:**
 
-| Parameter              | Type    | Required | Description                                                                                           |
-| ---------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| `max_repos`            | integer | No       | Maximum number of repositories to collect                                                             |
-| `resource`             | string  | No       | Data source: `github` (default) or `ossinsight`                                                       |
-| `since`                | string  | No       | **For GitHub**: Time period (`daily`, `weekly`, `monthly`)                                            |
-| `spoken_language_code` | string  | No       | **For GitHub**: Spoken language filter (e.g., `en`, `uk`, `es`)                                       |
-| `period`               | string  | No       | **For OssInsight**: Time period (`past_24_hours`, `past_week`, `past_month`, `past_3_months`)         |
-| `language`             | string  | No       | **For OssInsight**: Programming language filter (e.g., `Python`, `All`)                               |
+| Parameter                | Type    | Required | Description                                                                                                 |
+| ------------------------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `max_repos`            | integer | No       | Maximum number of repositories to collect                                                                   |
+| `resource`             | string  | No       | Data source:`github` (default) or `ossinsight`                                                          |
+| `since`                | string  | No       | **For GitHub**: Time period (`daily`, `weekly`, `monthly`)                                      |
+| `spoken_language_code` | string  | No       | **For GitHub**: Spoken language filter (e.g., `en`, `uk`, `es`)                                 |
+| `period`               | string  | No       | **For OssInsight**: Time period (`past_24_hours`, `past_week`, `past_month`, `past_3_months`) |
+| `language`             | string  | No       | **For OssInsight**: Programming language filter (e.g., `Python`, `All`)                           |
 
 **Request Example:**
 
@@ -272,13 +272,13 @@ curl -X PUT \
 
 **Request Parameters:**
 
-| Parameter        | Type    | Required | Description                                                                        |
-| ---------------- | ------- | -------- | ---------------------------------------------------------------------------------- |
-| `use_direct_url` | boolean | No       | Whether to use direct URL for LLM API calls                                        |
-| `llm_provider`   | string  | No       | LLM provider name (e.g., `openai`, `mistral_agent`, `mistral_api`, `openrouter`)   |
-| `temperature`    | float   | No       | Controls randomness in AI responses (0.0-2.0)                                      |
-| `model`          | string  | No       | The AI model to use for content generation                                         |
-| `content`        | string  | No       | The prompt content/template for AI generation                                      |
+| Parameter          | Type    | Required | Description                                                                             |
+| ------------------ | ------- | -------- | --------------------------------------------------------------------------------------- |
+| `use_direct_url` | boolean | No       | Whether to use direct URL for LLM API calls                                             |
+| `llm_provider`   | string  | No       | LLM provider name (e.g.,`openai`, `mistral_agent`, `mistral_api`, `openrouter`) |
+| `temperature`    | float   | No       | Controls randomness in AI responses (0.0-2.0)                                           |
+| `model`          | string  | No       | The AI model to use for content generation                                              |
+| `content`        | string  | No       | The prompt content/template for AI generation                                           |
 
 **Request Example:**
 
@@ -318,15 +318,15 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 **Request Parameters:**
 
-| Parameter    | Type    | Required | Description                                                                  |
-| ------------ | ------- | -------- | ---------------------------------------------------------------------------- |
-| `name`       | string  | No       | Filter by cron job name (`collect` or `message`)                             |
+| Parameter      | Type    | Required | Description                                                                  |
+| -------------- | ------- | -------- | ---------------------------------------------------------------------------- |
+| `name`       | string  | No       | Filter by cron job name (`collect` or `message`)                         |
 | `page`       | integer | No       | Page number (default: 1)                                                     |
 | `limit`      | integer | No       | Number of records per page (default: 20)                                     |
-| `sort`       | string  | No       | Sort order by execution date (`asc` or `desc`, default: `desc`)              |
-| `status`     | integer | No       | Filter by execution status: `0` (Failure), `1` (Success), `2` (Partial)      |
-| `start_date` | string  | No       | Filter records from this date onwards (format: `YYYY-MM-DD` or RFC3339)      |
-| `end_date`   | string  | No       | Filter records up to this date (format: `YYYY-MM-DD` or RFC3339)             |
+| `sort`       | string  | No       | Sort order by execution date (`asc` or `desc`, default: `desc`)        |
+| `status`     | integer | No       | Filter by execution status:`0` (Failure), `1` (Success), `2` (Partial) |
+| `start_date` | string  | No       | Filter records from this date onwards (format:`YYYY-MM-DD` or RFC3339)     |
+| `end_date`   | string  | No       | Filter records up to this date (format:`YYYY-MM-DD` or RFC3339)            |
 
 **Response Structure:**
 
@@ -469,8 +469,6 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 - 401: Unauthorized - Invalid or missing Bearer token
 - 500: Internal Server Error - Database or server error
 
-## API Configurations Management
-
 ### /api/api-configs
 
 **Endpoint:** `/api/api-configs`
@@ -529,7 +527,7 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 ]
 ```
 
-### /api/api-configs/{name}
+### /api/api-configs/
 
 **Endpoint:** `/api/api-configs/{name}`
 
@@ -602,22 +600,22 @@ curl -X POST \
 
 **Request Parameters:**
 
-| Parameter           | Type    | Required | Description                                                                      |
-| ------------------- | ------- | -------- | -------------------------------------------------------------------------------- |
-| `name`              | string  | Yes      | Unique identifier for the API (alphanumeric, hyphens, underscores only)          |
-| `url`               | string  | Yes      | The endpoint URL (supports `{env.VAR}` syntax)                                   |
-| `method`            | string  | Yes      | HTTP method (GET, POST, PUT, DELETE, PATCH)                                      |
-| `auth_type`         | string  | No       | Authentication type: `bearer`, `api_key`, or empty                               |
-| `token_env_var`     | string  | No       | Environment variable name containing the auth token                              |
-| `token_header`      | string  | No       | Header name for API key (required if `auth_type` is `api_key`)                   |
-| `content_type`      | string  | Yes      | Request content type: `json` or `multipart`                                      |
-| `timeout`           | integer | Yes      | Request timeout in seconds (must be > 0)                                         |
-| `success_code`      | integer | Yes      | Expected HTTP success code (100-599)                                             |
-| `enabled`           | boolean | Yes      | Whether the API is enabled                                                       |
-| `response_type`     | string  | No       | Expected response format                                                         |
-| `text_language`     | string  | No       | Language code for text content (e.g., `en`, `uk`)                                |
-| `socialify_image`   | boolean | Yes      | Whether to generate socialify images                                             |
-| `default_json_body` | string  | No       | JSON string of default key/value pairs (supports `{env.VAR}`)                    |
+| Parameter             | Type    | Required | Description                                                             |
+| --------------------- | ------- | -------- | ----------------------------------------------------------------------- |
+| `name`              | string  | Yes      | Unique identifier for the API (alphanumeric, hyphens, underscores only) |
+| `url`               | string  | Yes      | The endpoint URL (supports `{env.VAR}` syntax)                        |
+| `method`            | string  | Yes      | HTTP method (GET, POST, PUT, DELETE, PATCH)                             |
+| `auth_type`         | string  | No       | Authentication type:`bearer`, `api_key`, or empty                   |
+| `token_env_var`     | string  | No       | Environment variable name containing the auth token                     |
+| `token_header`      | string  | No       | Header name for API key (required if `auth_type` is `api_key`)      |
+| `content_type`      | string  | Yes      | Request content type:`json` or `multipart`                          |
+| `timeout`           | integer | Yes      | Request timeout in seconds (must be > 0)                                |
+| `success_code`      | integer | Yes      | Expected HTTP success code (100-599)                                    |
+| `enabled`           | boolean | Yes      | Whether the API is enabled                                              |
+| `response_type`     | string  | No       | Expected response format                                                |
+| `text_language`     | string  | No       | Language code for text content (e.g.,`en`, `uk`)                    |
+| `socialify_image`   | boolean | Yes      | Whether to generate socialify images                                    |
+| `default_json_body` | string  | No       | JSON string of default key/value pairs (supports `{env.VAR}`)         |
 
 **Request Example:**
 
@@ -663,7 +661,7 @@ curl -X POST \
 }
 ```
 
-### /api/api-configs/{name} (update)
+### /api/api-configs/ (update)
 
 **Endpoint:** `/api/api-configs/{name}`
 
@@ -688,21 +686,21 @@ curl -X PUT \
 
 All fields are optional. Only include the fields you want to update.
 
-| Parameter           | Type    | Description                                                                      |
-| ------------------- | ------- | -------------------------------------------------------------------------------- |
-| `url`               | string  | The endpoint URL (supports `{env.VAR}` syntax)                                   |
-| `method`            | string  | HTTP method (GET, POST, PUT, DELETE, PATCH)                                      |
-| `auth_type`         | string  | Authentication type: `bearer`, `api_key`, or empty                               |
-| `token_env_var`     | string  | Environment variable name containing the auth token                              |
-| `token_header`      | string  | Header name for API key                                                          |
-| `content_type`      | string  | Request content type: `json` or `multipart`                                      |
-| `timeout`           | integer | Request timeout in seconds (must be > 0)                                         |
-| `success_code`      | integer | Expected HTTP success code (100-599)                                             |
-| `enabled`           | boolean | Whether the API is enabled                                                       |
-| `response_type`     | string  | Expected response format                                                         |
-| `text_language`     | string  | Language code for text content (e.g., `en`, `uk`)                                |
-| `socialify_image`   | boolean | Whether to generate socialify images                                             |
-| `default_json_body` | string  | JSON string of default key/value pairs (supports `{env.VAR}`)                    |
+| Parameter             | Type    | Description                                                     |
+| --------------------- | ------- | --------------------------------------------------------------- |
+| `url`               | string  | The endpoint URL (supports `{env.VAR}` syntax)                |
+| `method`            | string  | HTTP method (GET, POST, PUT, DELETE, PATCH)                     |
+| `auth_type`         | string  | Authentication type:`bearer`, `api_key`, or empty           |
+| `token_env_var`     | string  | Environment variable name containing the auth token             |
+| `token_header`      | string  | Header name for API key                                         |
+| `content_type`      | string  | Request content type:`json` or `multipart`                  |
+| `timeout`           | integer | Request timeout in seconds (must be > 0)                        |
+| `success_code`      | integer | Expected HTTP success code (100-599)                            |
+| `enabled`           | boolean | Whether the API is enabled                                      |
+| `response_type`     | string  | Expected response format                                        |
+| `text_language`     | string  | Language code for text content (e.g.,`en`, `uk`)            |
+| `socialify_image`   | boolean | Whether to generate socialify images                            |
+| `default_json_body` | string  | JSON string of default key/value pairs (supports `{env.VAR}`) |
 
 **Request Example:**
 
@@ -737,7 +735,7 @@ All fields are optional. Only include the fields you want to update.
 }
 ```
 
-### /api/api-configs/{name} (delete)
+### /api/api-configs/ (delete)
 
 **Endpoint:** `/api/api-configs/{name}`
 
