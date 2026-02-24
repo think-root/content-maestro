@@ -4,3 +4,7 @@ tmp/
 data/
 .air.toml
 .vscode/
+.agent/*
+!.agent/
+openspec/*
+!openspec/
