@@ -1,3 +1,11 @@
+# [3.6.0](https://github.com/think-root/content-maestro/compare/v3.5.0...v3.6.0) (2026-02-24)
+
+
+### Features
+
+* Add `http.MethodOptions` handling to API config endpoints. ([fce7a3a](https://github.com/think-root/content-maestro/commit/fce7a3a4bd77789f4dbf49e495ec2abf63db70ed))
+* **notification:** add Pushover notification integration ([c2abc53](https://github.com/think-root/content-maestro/commit/c2abc53b01404eb2e747646b986114ff70384c33))
+
 # [3.5.0](https://github.com/think-root/content-maestro/compare/v3.4.0...v3.5.0) (2026-01-25)
 
 
