@@ -67,6 +67,8 @@ Create a **.env** file in the app root directory:
 | WAPP_TOKEN                | Only if enabling WhatsApp    | API key for the WhatsApp connector. |
 | WAPP_JID                  | Only if enabling WhatsApp    | Target WhatsApp chat/channel JID for `/wapp/send-message`. |
 | PUBLIC_URL                | Yes (for Threads)            | Base URL (e.g., https://yourdomain.com) for serving images to external APIs. |
+| PUSHOVER_USER_KEY         | No                           | Pushover user/group key for push notifications on cron failures. |
+| PUSHOVER_API_TOKEN        | No                           | Pushover application API token for push notifications on cron failures. |
 
 ### Run the app
 
@@ -82,6 +84,10 @@ The API will be accessible at `http://localhost:8080` (or the port specified in 
 go build -o content-maestro ./cmd/main.go
 ./content-maestro
 ```
+
+## Pushover Notifications (Optional)
+
+Content Maestro can send push notifications via [Pushover](https://pushover.net/api) when a cron job (`collect` or `message`) finishes with a **Failed** or **Partial** status. This feature is entirely opt-in — set both `PUSHOVER_USER_KEY` and `PUSHOVER_API_TOKEN` in your `.env` file to enable it. If either variable is missing or empty, notifications are silently skipped.
 
 ## External APIs Integration
 
