@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"content-maestro/internal/api"
+	"content-maestro/internal/notification"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
@@ -28,12 +29,14 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			if err := store.LogCronExecution("message", 0, panicMessage); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
 			}
+			notification.NotifyCronResult("message", 0, panicMessage)
 			panic(r)
 		}
 
 		if err := store.LogCronExecution("message", status, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
+		notification.NotifyCronResult("message", status, logMessage)
 	}()
 
 	apiConfigs := api.GetAPIConfigs()

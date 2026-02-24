@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"bytes"
+	"content-maestro/internal/notification"
 	"content-maestro/internal/store"
 	"encoding/json"
 	"fmt"
@@ -107,12 +108,14 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 			if err := store.LogCronExecution("collect", 0, panicMessage); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
 			}
+			notification.NotifyCronResult("collect", 0, panicMessage)
 			panic(r)
 		}
 
 		if err := store.LogCronExecution("collect", status, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
+		notification.NotifyCronResult("collect", status, logMessage)
 	}()
 
 
