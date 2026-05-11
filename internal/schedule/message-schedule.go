@@ -68,7 +68,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 				textLanguage = "en"
 			}
 
-			repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
+			repo, err := repository.GetRepository(1, false, "ASC", "publication_queue", textLanguage)
 			if err != nil {
 				log.Error("Error getting repository for language %s: %v", textLanguage, err)
 				continue
@@ -115,7 +115,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			textLanguage = "en"
 		}
 
-		repo, err := repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
+		repo, err := repository.GetRepository(1, false, "ASC", "publication_queue", textLanguage)
 		if err != nil {
 			log.Error("Error getting repository for %s API with language %s: %v", apiName, textLanguage, err)
 			failedAPIs = append(failedAPIs, apiName)
@@ -150,7 +150,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 				log.Error("Error deleting repository %s: %v", item.URL, err)
 			}
 
-			repo, err = repository.GetRepository(1, false, "ASC", "date_added", textLanguage)
+			repo, err = repository.GetRepository(1, false, "ASC", "publication_queue", textLanguage)
 			if err != nil {
 				log.Error("Error getting next repository for %s API: %v", apiName, err)
 				failedAPIs = append(failedAPIs, apiName)
