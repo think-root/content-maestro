@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/think-root/content-maestro/compare/v3.6.0...v3.7.0) (2026-05-11)
+
+
+### Features
+
+* **queue:** publish from promotion queue ([f27301e](https://github.com/think-root/content-maestro/commit/f27301e3c49920506cd0eae7b6681c67c4cb2d0b))
+
 # [3.6.0](https://github.com/think-root/content-maestro/compare/v3.5.0...v3.6.0) (2026-02-24)
 
 
