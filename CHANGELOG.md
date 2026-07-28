@@ -1,3 +1,10 @@
+## [3.7.1](https://github.com/think-root/content-maestro/compare/v3.7.0...v3.7.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **collect:** only send Pushover on genuine failure, not partial ([12fa005](https://github.com/think-root/content-maestro/commit/12fa005f0ff7e6adb9a45b896bbea1b922369885))
+
 # [3.7.0](https://github.com/think-root/content-maestro/compare/v3.6.0...v3.7.0) (2026-05-11)
 
 
