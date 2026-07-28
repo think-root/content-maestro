@@ -115,7 +115,13 @@ func CollectJob(s *gocron.Scheduler, store store.StoreInterface) {
 		if err := store.LogCronExecution("collect", status, logMessage); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
-		notification.NotifyCronResult("collect", status, logMessage)
+		// Only alert via Pushover when the collect job genuinely failed
+		// (status 0). A "partial" result just means some repos were skipped or
+		// hit transient errors while others were collected successfully - that
+		// is normal operation and shouldn't generate a notification.
+		if status == 0 {
+			notification.NotifyCronResult("collect", status, logMessage)
+		}
 	}()
 
 
