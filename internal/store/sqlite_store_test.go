@@ -132,6 +132,31 @@ func TestSQLiteStore_LogCronExecution(t *testing.T) {
 	assert.Equal(t, "Test output", history[0].Output)
 }
 
+func TestSQLiteStore_LogCronExecutionDetails(t *testing.T) {
+	store := setupTestStore(t)
+	defer store.Close()
+
+	details := &models.MessageRunDetails{
+		URL:    "https://github.com/resemble-ai/chatterbox",
+		Sent:   []string{"bluesky"},
+		Failed: []string{"threads"},
+		Manual: true,
+	}
+
+	require.NoError(t, store.LogCronExecutionDetails("message", 2, "Manual retry: partial", details))
+	// A run logged without details must read back without them, which is also how
+	// every row written before the column existed behaves.
+	require.NoError(t, store.LogCronExecution("message", 1, "Scheduled run"))
+
+	history, err := store.GetCronHistory("message", nil, 0, 10, "asc", nil, nil)
+	require.NoError(t, err)
+	require.Len(t, history, 2)
+
+	require.NotNil(t, history[0].Details)
+	assert.Equal(t, *details, *history[0].Details)
+	assert.Nil(t, history[1].Details)
+}
+
 func TestSQLiteStore_LogCronExecution_EmptyName(t *testing.T) {
 	store := setupTestStore(t)
 	defer store.Close()

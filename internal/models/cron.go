@@ -21,3 +21,10 @@ type UpdateScheduleRequest struct {
 type UpdateStatusRequest struct {
 	IsActive bool `json:"is_active"`
 }
+
+// RetryMessageRequest asks for a repository to be re-sent to the named APIs.
+// URL is optional: when empty the most recently published repository is used.
+type RetryMessageRequest struct {
+	APIs []string `json:"apis"`
+	URL  string   `json:"url"`
+}

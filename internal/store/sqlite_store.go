@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	_ "modernc.org/sqlite"
 	"gopkg.in/yaml.v3"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -75,7 +75,8 @@ func createTablesIfNotExist(db *sql.DB) error {
 			name TEXT NOT NULL,
 			timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			status INTEGER NOT NULL,
-			output TEXT
+			output TEXT,
+			details TEXT
 		)`)
 	if err != nil {
 		return fmt.Errorf("failed to create cron_history table: %v", err)
@@ -101,6 +102,10 @@ func createTablesIfNotExist(db *sql.DB) error {
 
 	if err := migrateCronHistorySuccessToStatus(db); err != nil {
 		return fmt.Errorf("failed to migrate cron_history success to status: %v", err)
+	}
+
+	if err := migrateCronHistoryDetails(db); err != nil {
+		return fmt.Errorf("failed to migrate cron_history details: %v", err)
 	}
 
 	_, err = db.Exec(`
@@ -230,31 +235,12 @@ func migrateCollectSettingsSchema(db *sql.DB) error {
 }
 
 func migrateCronHistorySuccessToStatus(db *sql.DB) error {
-	rows, err := db.Query("PRAGMA table_info(cron_history)")
+	columns, err := cronHistoryColumns(db)
 	if err != nil {
-		return fmt.Errorf("failed to query table info: %v", err)
-	}
-	defer rows.Close()
-
-	hasSuccessColumn := false
-	hasStatusColumn := false
-	for rows.Next() {
-		var cid int
-		var name, colType string
-		var notNull, pk int
-		var dfltValue interface{}
-		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
-			return fmt.Errorf("failed to scan table info: %v", err)
-		}
-		if name == "success" {
-			hasSuccessColumn = true
-		}
-		if name == "status" {
-			hasStatusColumn = true
-		}
+		return err
 	}
 
-	if hasStatusColumn || !hasSuccessColumn {
+	if columns["status"] || !columns["success"] {
 		return nil
 	}
 
@@ -263,6 +249,45 @@ func migrateCronHistorySuccessToStatus(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func migrateCronHistoryDetails(db *sql.DB) error {
+	columns, err := cronHistoryColumns(db)
+	if err != nil {
+		return err
+	}
+
+	if columns["details"] {
+		return nil
+	}
+
+	if _, err := db.Exec("ALTER TABLE cron_history ADD COLUMN details TEXT"); err != nil {
+		return fmt.Errorf("failed to add details column: %v", err)
+	}
+
+	return nil
+}
+
+func cronHistoryColumns(db *sql.DB) (map[string]bool, error) {
+	rows, err := db.Query("PRAGMA table_info(cron_history)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table info: %v", err)
+	}
+	defer rows.Close()
+
+	columns := make(map[string]bool)
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notNull, pk int
+		var dfltValue interface{}
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
+			return nil, fmt.Errorf("failed to scan table info: %v", err)
+		}
+		columns[name] = true
+	}
+
+	return columns, rows.Err()
 }
 
 func (s *SQLiteStore) Close() error {
@@ -371,6 +396,10 @@ func (s *SQLiteStore) InitializeDefaultSettings() error {
 }
 
 func (s *SQLiteStore) LogCronExecution(name string, status int, output string) error {
+	return s.LogCronExecutionDetails(name, status, output, nil)
+}
+
+func (s *SQLiteStore) LogCronExecutionDetails(name string, status int, output string, details *models.MessageRunDetails) error {
 	if name == "" {
 		return fmt.Errorf("cron job name cannot be empty")
 	}
@@ -386,8 +415,17 @@ func (s *SQLiteStore) LogCronExecution(name string, status int, output string) e
 
 	timestamp := time.Now()
 
-	query := "INSERT INTO cron_history (name, timestamp, status, output) VALUES (?, ?, ?, ?)"
-	_, err := s.db.Exec(query, name, timestamp, status, output)
+	var encodedDetails any
+	if details != nil {
+		encoded, err := json.Marshal(details)
+		if err != nil {
+			return fmt.Errorf("failed to encode cron execution details: %v", err)
+		}
+		encodedDetails = string(encoded)
+	}
+
+	query := "INSERT INTO cron_history (name, timestamp, status, output, details) VALUES (?, ?, ?, ?, ?)"
+	_, err := s.db.Exec(query, name, timestamp, status, output, encodedDetails)
 	if err != nil {
 		fmt.Printf("Failed to log cron execution to database: %v\n", err)
 		fmt.Printf("Attempted to log: name=%s, status=%d, timestamp=%v, output_length=%d\n",
@@ -431,7 +469,7 @@ func (s *SQLiteStore) GetCronHistoryCount(name string, status *int, startDate, e
 }
 
 func (s *SQLiteStore) GetCronHistory(name string, status *int, offset, limit int, sortOrder string, startDate, endDate *time.Time) ([]models.CronHistory, error) {
-	query := "SELECT name, timestamp, status, output FROM cron_history WHERE 1=1"
+	query := "SELECT name, timestamp, status, output, details FROM cron_history WHERE 1=1"
 	args := []any{}
 
 	if name != "" {
@@ -469,8 +507,19 @@ func (s *SQLiteStore) GetCronHistory(name string, status *int, offset, limit int
 	var history []models.CronHistory
 	for rows.Next() {
 		var h models.CronHistory
-		if err := rows.Scan(&h.Name, &h.Timestamp, &h.Success, &h.Output); err != nil {
+		// details is NULL for every run recorded before the column existed.
+		var details sql.NullString
+		if err := rows.Scan(&h.Name, &h.Timestamp, &h.Success, &h.Output, &details); err != nil {
 			return nil, fmt.Errorf("failed to scan cron history: %v", err)
+		}
+		if details.Valid && details.String != "" {
+			var parsed models.MessageRunDetails
+			if err := json.Unmarshal([]byte(details.String), &parsed); err != nil {
+				// A malformed row must not take the whole history down.
+				fmt.Printf("Failed to decode cron history details for %s: %v\n", h.Name, err)
+			} else {
+				h.Details = &parsed
+			}
 		}
 		history = append(history, h)
 	}

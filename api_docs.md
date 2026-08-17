@@ -340,6 +340,7 @@ Note that the `status` field uses integer status codes:
 Structure:
 
 - `data`: Array of cron history records
+- `details`: Present on message runs recorded after this field was introduced. Holds the item that was published and where it landed: `url`, `sent`, `failed`, and `manual` (true for runs triggered through [`/api/message/retry`](#apimessageretry)). Absent for older records and for collect runs.
 - `pagination`: Pagination metadata object containing:
   - `total_count`: Total number of records matching the filters
   - `current_page`: Current page number
@@ -368,7 +369,12 @@ Structure:
       "name": "message",
       "timestamp": "2024-03-15T10:10:00Z",
       "status": 2,
-      "output": "Message sent to: telegram. Failed: bluesky"
+      "output": "Message sent to: telegram. Failed: bluesky",
+      "details": {
+        "url": "https://github.com/resemble-ai/chatterbox",
+        "sent": ["telegram"],
+        "failed": ["bluesky"]
+      }
     }
   ],
   "pagination": {
@@ -468,6 +474,70 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 - 400: Bad Request - Invalid parameters or date validation errors
 - 401: Unauthorized - Invalid or missing Bearer token
 - 500: Internal Server Error - Database or server error
+
+### /api/message/retry
+
+**Endpoint:** `/api/message/retry`
+
+**Method:** `POST`
+
+**Description:** Re-send an already published repository to the integrations that did not receive it.
+
+A message run marks the repository as posted as soon as **any** integration succeeds, which drops the item out of the publication queue. The connectors that failed can therefore never recover it on the next run — this endpoint is the way to finish such a partial publication by hand.
+
+The repository text is fetched per integration in that integration's configured `text_language`, and one image is generated for the whole retry when any integration has `socialify_image` enabled. No Pushover notification is sent: a manual retry is already being watched by whoever triggered it.
+
+Retries are serialised — a second one waits for the first, so a double-clicked button cannot publish twice. An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
+
+**Curl Example:**
+
+```bash
+curl -X POST \
+  'http://localhost:8080/api/message/retry' \
+  -H 'Authorization: Bearer <API_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "apis": ["threads"],
+    "url": "https://github.com/resemble-ai/chatterbox"
+  }'
+```
+
+**Request Parameters:**
+
+| Parameter | Type     | Required | Description                                                                                                     |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `apis`  | string[] | Yes      | Names of the integrations to send to, as configured in`/api/api-configs`. Blanks and duplicates are ignored.   |
+| `url`   | string   | No       | Repository to publish. When omitted the most recently published repository is used, which is only a guess at what a partial run consumed: a run that failed for *every* integration never marked its item as posted, so the guess resolves to the previous one. Callers that know the item — the dashboard reads it from the run details — should always pass it. |
+
+**Response Structure:**
+
+- `url`: The repository that was published
+- `status`: `0` (nothing sent), `1` (all sent), `2` (partially sent) — the same codes as cron history
+- `message`: The text recorded in cron history
+- `succeeded` / `failed`: Integration names per outcome
+- `outcomes`: Per-integration detail, with an `error` string for every failure
+
+**Response Example:**
+
+```json
+{
+  "url": "https://github.com/resemble-ai/chatterbox",
+  "status": 1,
+  "message": "Manual retry: https://github.com/resemble-ai/chatterbox sent to: threads",
+  "succeeded": ["threads"],
+  "failed": null,
+  "outcomes": [{ "api_name": "threads", "success": true }]
+}
+```
+
+Every retry is recorded in cron history under the `message` name with `details.manual = true`, so [`/api/cron-history`](#apicron-history) shows it alongside scheduled runs.
+
+**Status Codes:**
+
+- 200: The retry ran. Individual integration failures are reported in `outcomes`, not in the status code
+- 400: Bad Request - Invalid body or an empty `apis` list
+- 401: Unauthorized - Invalid or missing Bearer token
+- 500: Internal Server Error - API configurations not loaded, or the repository could not be resolved
 
 ### /api/api-configs
 

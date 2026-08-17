@@ -19,8 +19,16 @@ func RemoveAllFilesInFolder(dir string) error {
 	}
 
 	for _, file := range files {
-		err = remove(file)
-		if err != nil {
+		// Subdirectories are owned by whoever created them - a manual retry keeps
+		// its images in one so this cleanup cannot delete a file that is still
+		// being uploaded.
+		if info, err := os.Stat(file); err == nil && info.IsDir() {
+			continue
+		}
+
+		// A file that another writer removed in the meantime is not a failure:
+		// treating it as one used to turn a successful run into a reported one.
+		if err := remove(file); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	}

@@ -2,14 +2,13 @@ package schedule
 
 import (
 	"content-maestro/internal/api"
+	"content-maestro/internal/models"
 	"content-maestro/internal/notification"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
 	"content-maestro/internal/utils"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,18 +21,38 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	var status int
 	var logMessage string
 
+	var successfulAPIs []string
+	var failedAPIs []string
+	var errorMessages []string
+	var updatedURL string
+
+	// Assembled at exit rather than at the end of the publishing loop, so an
+	// early return - or a panic - still records which item the run consumed and
+	// which connectors missed it. That is the data a manual retry needs, and it
+	// matters most exactly when the run died mid-publish.
+	runDetails := func() *models.MessageRunDetails {
+		if updatedURL == "" && len(successfulAPIs) == 0 && len(failedAPIs) == 0 {
+			return nil
+		}
+		return &models.MessageRunDetails{
+			URL:    updatedURL,
+			Sent:   successfulAPIs,
+			Failed: failedAPIs,
+		}
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Message job panic: %v", r)
-			if err := store.LogCronExecution("message", 0, panicMessage); err != nil {
+			if err := store.LogCronExecutionDetails("message", 0, panicMessage, runDetails()); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
 			}
 			notification.NotifyCronResult("message", 0, panicMessage)
 			panic(r)
 		}
 
-		if err := store.LogCronExecution("message", status, logMessage); err != nil {
+		if err := store.LogCronExecutionDetails("message", status, logMessage, runDetails()); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
 		notification.NotifyCronResult("message", status, logMessage)
@@ -83,7 +102,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			username_repo := strings.TrimPrefix(item.URL, "https://github.com/")
 			timestamp := time.Now().UnixNano()
 			imageFilename := fmt.Sprintf("image_%d.png", timestamp)
-			image_name = fmt.Sprintf("./tmp/gh_project_img/%s", imageFilename)
+			image_name = fmt.Sprintf("%s/%s", imageDir, imageFilename)
 
 			err = socialify.Socialify(username_repo, image_name)
 			if err != nil {
@@ -99,11 +118,6 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			break
 		}
 	}
-
-	var successfulAPIs []string
-	var failedAPIs []string
-	var errorMessages []string
-	var updatedURL string
 
 	for apiName, endpoint := range apiConfigs.APIs {
 		if !endpoint.Enabled {
@@ -132,6 +146,13 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 		item := repo.Data.Items[0]
 
+		// Repositories whose URL no longer resolves are dropped and the next
+		// candidate is fetched. The loop reports its outcome through this flag:
+		// reading the fetch response afterwards would dereference nil once a
+		// re-fetch fails, which crashes the job and, through the deferred
+		// re-panic, the whole process.
+		itemAvailable := true
+
 		for {
 			statusCode, err := repository.ValidateRepositoryURL(item.URL)
 			if err != nil {
@@ -150,25 +171,27 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 				log.Error("Error deleting repository %s: %v", item.URL, err)
 			}
 
-			repo, err = repository.GetRepository(1, false, "ASC", "publication_queue", textLanguage)
+			nextRepo, err := repository.GetRepository(1, false, "ASC", "publication_queue", textLanguage)
 			if err != nil {
 				log.Error("Error getting next repository for %s API: %v", apiName, err)
 				failedAPIs = append(failedAPIs, apiName)
 				errorMessages = append(errorMessages, fmt.Sprintf("%s API error: failed to get next repository: %v", apiName, err))
+				itemAvailable = false
 				break
 			}
 
-			if len(repo.Data.Items) == 0 {
+			if len(nextRepo.Data.Items) == 0 {
 				log.Debugf("No more valid repositories available for %s API", apiName)
 				failedAPIs = append(failedAPIs, apiName)
 				errorMessages = append(errorMessages, fmt.Sprintf("%s API error: no valid repositories available", apiName))
+				itemAvailable = false
 				break
 			}
 
-			item = repo.Data.Items[0]
+			item = nextRepo.Data.Items[0]
 		}
 
-		if len(repo.Data.Items) == 0 {
+		if !itemAvailable {
 			continue
 		}
 
@@ -176,48 +199,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			updatedURL = item.URL
 		}
 
-		var req api.RequestConfig
-
-		commonFields := map[string]string{
-			"text": item.Text,
-			"url":  item.URL,
-		}
-
-		switch strings.ToLower(endpoint.ContentType) {
-		case "multipart":
-			req = api.RequestConfig{
-				APIName:    apiName,
-				FormFields: commonFields,
-			}
-
-			if endpoint.SocialifyImage && image_name != "" {
-				req.FileFields = map[string]string{
-					"image": image_name,
-				}
-			}
-		case "json":
-			req = api.RequestConfig{
-				APIName:  apiName,
-				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
-			}
-
-			if endpoint.SocialifyImage && image_name != "" {
-				publicURL := os.Getenv("PUBLIC_URL")
-				if publicURL != "" {
-					imageURL := fmt.Sprintf("%s/images/%s", publicURL, filepath.Base(image_name))
-					req.JSONBody["image_url"] = imageURL
-				} else {
-					log.Error("PUBLIC_URL not set, cannot generate image_url for API %s", apiName)
-				}
-			}
-		default:
-			req = api.RequestConfig{
-				APIName:  apiName,
-				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
-			}
-		}
-
-		resp, err := api.ExecuteRequest(req)
+		resp, err := publishItem(apiName, endpoint, item, image_name)
 		if err != nil {
 			log.Errorf("%s API error: %v", apiName, err)
 			failedAPIs = append(failedAPIs, apiName)
@@ -241,7 +223,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 		}
 	}
 
-	err := utils.RemoveAllFilesInFolder("./tmp/gh_project_img")
+	err := utils.RemoveAllFilesInFolder(imageDir)
 	if err != nil {
 		log.Error(err)
 		status = 0

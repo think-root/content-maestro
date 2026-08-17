@@ -1,20 +1,12 @@
 package repository
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
 )
 
-var (
-	deleteRepositoryUrl string
-)
-
-func init() {
-	deleteRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/delete-repository/"
-}
 func ValidateRepositoryURL(url string) (int, error) {
 	req, err := http.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
@@ -22,7 +14,7 @@ func ValidateRepositoryURL(url string) (int, error) {
 	}
 
 	httpClient := &http.Client{
-		Timeout: client.Timeout,
+		Timeout: getContentAlchemistTimeout(),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -43,9 +35,12 @@ type deleteResponse struct {
 }
 
 func DeleteRepository(url string) (bool, error) {
-	payload := strings.NewReader(fmt.Sprintf(`{"url":"%s"}`, url))
+	payload, err := json.Marshal(map[string]string{"url": url})
+	if err != nil {
+		return false, fmt.Errorf("error encoding request: %w", err)
+	}
 
-	req, err := http.NewRequest(http.MethodDelete, deleteRepositoryUrl, payload)
+	req, err := http.NewRequest(http.MethodDelete, deleteRepositoryURL(), bytes.NewReader(payload))
 	if err != nil {
 		return false, fmt.Errorf("error creating request: %w", err)
 	}
@@ -54,10 +49,10 @@ func DeleteRepository(url string) (bool, error) {
 		"Accept":        {"*/*"},
 		"Connection":    {"keep-alive"},
 		"Content-Type":  {"application/json"},
-		"Authorization": {bearerToken},
+		"Authorization": {authorizationHeader()},
 	}
 
-	resp, err := client.Do(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return false, fmt.Errorf("error making request: %w", err)
 	}

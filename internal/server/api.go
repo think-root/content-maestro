@@ -3,9 +3,11 @@ package server
 import (
 	apiExecutor "content-maestro/internal/api"
 	"content-maestro/internal/models"
+	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -466,6 +468,44 @@ func (api *CronAPI) DeleteAPIConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// RetryMessagePost re-sends an already published repository to the APIs that
+// missed it. A partially successful message run marks the item as posted, so the
+// cron alone can never recover the connectors that failed.
+//
+// The response is always 200 once the retry has run: per-API outcomes carry the
+// individual failures, which are far more useful than a single status code.
+func (api *CronAPI) RetryMessagePost(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodOptions:
+		return
+	case http.MethodPost:
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req models.RetryMessageRequest
+	// The body is a short list of integration names and a url; anything larger is
+	// not a request this endpoint should read into memory.
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8*1024)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := schedule.RetryMessagePost(api.store, req.APIs, req.URL)
+	if err != nil {
+		if errors.Is(err, schedule.ErrInvalidRetryRequest) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 func (api *CronAPI) HandleAPIConfigs(w http.ResponseWriter, r *http.Request) {

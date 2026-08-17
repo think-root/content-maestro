@@ -70,17 +70,7 @@ func TestValidateRepositoryURL_InvalidURL(t *testing.T) {
 }
 
 func TestDeleteRepository(t *testing.T) {
-	originalClient := client
-	originalURL := deleteRepositoryUrl
-	originalBearer := bearerToken
-
-	bearerToken = "Bearer test-token"
-
-	defer func() {
-		client = originalClient
-		deleteRepositoryUrl = originalURL
-		bearerToken = originalBearer
-	}()
+	t.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
 
 	tests := []struct {
 		name           string
@@ -140,8 +130,8 @@ func TestDeleteRepository(t *testing.T) {
 					t.Errorf("Expected Content-Type header to be application/json")
 				}
 
-				if r.Header.Get("Authorization") != bearerToken {
-					t.Errorf("Expected Authorization header to be %s, got %s", bearerToken, r.Header.Get("Authorization"))
+				if r.Header.Get("Authorization") != testBearerToken {
+					t.Errorf("Expected Authorization header to be %s, got %s", testBearerToken, r.Header.Get("Authorization"))
 				}
 
 				w.WriteHeader(tt.statusCode)
@@ -149,8 +139,7 @@ func TestDeleteRepository(t *testing.T) {
 			}))
 			defer server.Close()
 
-			deleteRepositoryUrl = server.URL
-			client = server.Client()
+			t.Setenv("CONTENT_ALCHEMIST_URL", server.URL)
 
 			result, err := DeleteRepository(tt.url)
 			if (err != nil) != tt.wantErr {
