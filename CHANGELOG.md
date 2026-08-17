@@ -1,3 +1,19 @@
+# [3.8.0](https://github.com/think-root/content-maestro/compare/v3.7.1...v3.8.0) (2026-08-17)
+
+
+### Bug Fixes
+
+* **repository:** treat a rejected content-alchemist response as an error ([7b4f2e6](https://github.com/think-root/content-maestro/commit/7b4f2e612547454b1819182dbee3440422d2bbfd))
+* **schedule:** make a manual retry safe to run beside the cron ([f8fce3d](https://github.com/think-root/content-maestro/commit/f8fce3d7fb7fef3a499a3b242d21c26e4743c525))
+* **schedule:** stop the message job crashing when a re-fetch is rejected ([9b3d587](https://github.com/think-root/content-maestro/commit/9b3d587c618ec072d036b7019973bbfab2225ee3))
+
+
+### Features
+
+* **api:** add POST /api/message/retry ([8f61b9b](https://github.com/think-root/content-maestro/commit/8f61b9b3226fefabeb810221f6bbee99ca705f33))
+* **history:** record which item a message run published and where it landed ([bceee12](https://github.com/think-root/content-maestro/commit/bceee121c7366f2c9311e86768b4e0a5c658b7b1))
+* **schedule:** re-send one item to the integrations that missed it ([ec12727](https://github.com/think-root/content-maestro/commit/ec12727cf4f8bf45eb52d8c2fb080c04fcd22a4a))
+
 ## [3.7.1](https://github.com/think-root/content-maestro/compare/v3.7.0...v3.7.1) (2026-07-28)
 
 
