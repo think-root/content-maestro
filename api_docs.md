@@ -485,7 +485,9 @@ curl -H "Authorization: Bearer <API_TOKEN>" \
 
 A message run marks the repository as posted as soon as **any** integration succeeds, which drops the item out of the publication queue. The connectors that failed can therefore never recover it on the next run — this endpoint is the way to finish such a partial publication by hand.
 
-The repository text is fetched per integration in that integration's configured `text_language`, and the image is regenerated when the integration has `socialify_image` enabled. The posted flag is only touched if the item was still unposted. No Pushover notification is sent: a manual retry is already being watched by whoever triggered it.
+The repository text is fetched per integration in that integration's configured `text_language`, and one image is generated for the whole retry when any integration has `socialify_image` enabled. No Pushover notification is sent: a manual retry is already being watched by whoever triggered it.
+
+Retries are serialised — a second one waits for the first, so a double-clicked button cannot publish twice. An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
 
 **Curl Example:**
 
@@ -505,7 +507,7 @@ curl -X POST \
 | Parameter | Type     | Required | Description                                                                                                     |
 | --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------- |
 | `apis`  | string[] | Yes      | Names of the integrations to send to, as configured in`/api/api-configs`. Blanks and duplicates are ignored.   |
-| `url`   | string   | No       | Repository to publish. When omitted the most recently published repository is used — the item a partial run just consumed. |
+| `url`   | string   | No       | Repository to publish. When omitted the most recently published repository is used, which is only a guess at what a partial run consumed: a run that failed for *every* integration never marked its item as posted, so the guess resolves to the previous one. Callers that know the item — the dashboard reads it from the run details — should always pass it. |
 
 **Response Structure:**
 
