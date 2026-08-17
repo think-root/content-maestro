@@ -12,7 +12,11 @@ import (
 )
 
 var log = logger.NewLogger()
-var SocialifyHTTPClient = &http.Client{}
+
+// A timeout is required, not cosmetic: without one a hung upstream connection
+// bounds neither an attempt nor the caller, and the manual retry endpoint answers
+// an HTTP request synchronously.
+var SocialifyHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
 type RetryConfig struct {
 	MaxRetries    int

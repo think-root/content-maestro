@@ -14,7 +14,7 @@ func ValidateRepositoryURL(url string) (int, error) {
 	}
 
 	httpClient := &http.Client{
-		Timeout: client.Timeout,
+		Timeout: getContentAlchemistTimeout(),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -52,7 +52,7 @@ func DeleteRepository(url string) (bool, error) {
 		"Authorization": {authorizationHeader()},
 	}
 
-	resp, err := client.Do(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return false, fmt.Errorf("error making request: %w", err)
 	}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,27 @@ var ErrInvalidRetryRequest = errors.New("invalid retry request")
 var retrySocialifyConfig = socialify.RetryConfig{
 	MaxRetries:    2,
 	RetryInterval: 3 * time.Second,
+}
+
+const (
+	imageDir      = "./tmp/gh_project_img"
+	retryImageDir = imageDir + "/retry"
+)
+
+// retryMutex serialises manual retries. Two of them publishing the same item
+// concurrently - a double-clicked button, or two open dashboards - would post
+// twice to the same connector.
+var retryMutex sync.Mutex
+
+// imageURLPath turns a local image path into the path it is served under
+// /images/, so an image kept in a subdirectory stays reachable.
+func imageURLPath(imageName string) string {
+	relative, err := filepath.Rel(filepath.Clean(imageDir), filepath.Clean(imageName))
+	if err != nil || strings.HasPrefix(relative, "..") {
+		return filepath.Base(imageName)
+	}
+
+	return filepath.ToSlash(relative)
 }
 
 // publishItem sends one repository to one configured API. Shared by the message
@@ -58,7 +80,7 @@ func publishItem(apiName string, endpoint api.APIEndpoint, item repository.Item,
 		if endpoint.SocialifyImage && imageName != "" {
 			publicURL := os.Getenv("PUBLIC_URL")
 			if publicURL != "" {
-				req.JSONBody["image_url"] = fmt.Sprintf("%s/images/%s", publicURL, filepath.Base(imageName))
+				req.JSONBody["image_url"] = fmt.Sprintf("%s/images/%s", publicURL, imageURLPath(imageName))
 			} else {
 				log.Error("PUBLIC_URL not set, cannot generate image_url for API %s", apiName)
 			}
@@ -94,8 +116,9 @@ type RetryResult struct {
 // partially successful message run marks the item as posted, which drops it out
 // of the publication queue even though some connectors never received it.
 //
-// When url is empty the most recently published repository is used, which is the
-// item a partial run has just consumed.
+// When url is empty the most recently published repository is used. That is only
+// a guess at what a partial run consumed, so callers that know the item - the
+// dashboard reads it from the run details - should always pass it explicitly.
 func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*RetryResult, error) {
 	apiConfigs := api.GetAPIConfigs()
 	if apiConfigs == nil {
@@ -106,6 +129,9 @@ func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*
 	if err != nil {
 		return nil, err
 	}
+
+	retryMutex.Lock()
+	defer retryMutex.Unlock()
 
 	// Pin the target before contacting any connector so every API in this call
 	// publishes the same repository.
@@ -121,6 +147,18 @@ func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*
 	}
 
 	result := &RetryResult{URL: url}
+
+	// One image per retry, not one per connector: the cron shares a single image
+	// across all of them, and each generation is a separate upstream fetch.
+	imageName := ""
+	defer func() {
+		if imageName == "" {
+			return
+		}
+		if err := os.Remove(imageName); err != nil && !os.IsNotExist(err) {
+			log.Errorf("Failed to remove retry image %s: %v", imageName, err)
+		}
+	}()
 
 	for _, apiName := range requested {
 		endpoint, ok := apiConfigs.APIs[apiName]
@@ -145,8 +183,7 @@ func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*
 		}
 		itemPosted = itemPosted || item.Posted
 
-		imageName := ""
-		if endpoint.SocialifyImage {
+		if endpoint.SocialifyImage && imageName == "" {
 			imageName, err = generateRetryImage(item.URL)
 			if err != nil {
 				result.addFailure(apiName, fmt.Sprintf("failed to prepare image: %v", err))
@@ -155,14 +192,6 @@ func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*
 		}
 
 		resp, err := publishItem(apiName, endpoint, *item, imageName)
-
-		// Only this retry's own file is removed: the cron shares the directory and
-		// serves its image over /images/ while its own request is in flight.
-		if imageName != "" {
-			if removeErr := os.Remove(imageName); removeErr != nil && !os.IsNotExist(removeErr) {
-				log.Errorf("Failed to remove retry image %s: %v", imageName, removeErr)
-			}
-		}
 
 		switch {
 		case err != nil:
@@ -178,7 +207,10 @@ func RetryMessagePost(st store.StoreInterface, apiNames []string, url string) (*
 		}
 	}
 
-	if len(result.Succeeded) > 0 && !itemPosted {
+	// Marking an unposted item as posted while some connector still failed would
+	// drop it out of the queue - the very failure this endpoint exists to repair -
+	// so it is only marked once every requested connector has it.
+	if !itemPosted && len(result.Succeeded) > 0 && len(result.Failed) == 0 {
 		if _, err := repository.UpdateRepositoryPosted(url, true); err != nil {
 			log.Errorf("Failed to update posted status for %s after manual retry: %v", url, err)
 		}
@@ -248,13 +280,24 @@ func normalizeAPINames(apiNames []string) ([]string, error) {
 	return normalized, nil
 }
 
+// generateRetryImage writes the image into a subdirectory of the image root, so
+// the cron's cleanup - which only touches files - cannot delete it while the
+// connector is still fetching it.
 func generateRetryImage(repoURL string) (string, error) {
+	if err := os.MkdirAll(retryImageDir, 0o777); err != nil {
+		return "", fmt.Errorf("failed to create retry image directory: %w", err)
+	}
+
 	usernameRepo := strings.TrimPrefix(repoURL, "https://github.com/")
-	imageName := fmt.Sprintf("./tmp/gh_project_img/retry_%d.png", time.Now().UnixNano())
+	imageName := fmt.Sprintf("%s/retry_%d.png", retryImageDir, time.Now().UnixNano())
 
 	if err := socialify.SocialifyWithConfig(usernameRepo, imageName, retrySocialifyConfig); err != nil {
 		log.Errorf("Socialify failed during manual retry: %v", err)
 		if err := utils.CopyFile("./assets/banner.jpg", imageName); err != nil {
+			// A failed generation can still have left a partial file behind.
+			if removeErr := os.Remove(imageName); removeErr != nil && !os.IsNotExist(removeErr) {
+				log.Errorf("Failed to remove partial retry image %s: %v", imageName, removeErr)
+			}
 			return "", fmt.Errorf("failed to copy fallback banner file: %w", err)
 		}
 	}

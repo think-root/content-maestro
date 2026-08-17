@@ -264,6 +264,103 @@ func TestRetryMessagePostRejectsEmptyAPIList(t *testing.T) {
 	}
 }
 
+// An unposted item must only leave the queue once every requested connector has
+// it: marking it posted after a partial retry re-creates the failure this
+// endpoint exists to repair.
+func TestRetryMessagePostMarksPostedOnlyWhenComplete(t *testing.T) {
+	tests := []struct {
+		name       string
+		apis       []string
+		wantPosted bool
+	}{
+		{name: "every requested integration succeeds", apis: []string{"threads"}, wantPosted: true},
+		{name: "one integration still fails", apis: []string{"threads", "mastodon"}, wantPosted: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status":"ok"}`))
+			}))
+			defer connector.Close()
+
+			var postedPatches int
+			alchemist := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPatch {
+					postedPatches++
+					w.Write([]byte(`{"status":"ok","message":"updated"}`))
+					return
+				}
+
+				var body struct {
+					URL          string `json:"url"`
+					TextLanguage string `json:"text_language"`
+				}
+				json.NewDecoder(r.Body).Decode(&body)
+
+				url := body.URL
+				if url == "" {
+					url = retryTestURL
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(map[string]any{
+					"status": "ok",
+					"data": map[string]any{
+						"items": []map[string]any{{
+							"id": 1327, "posted": false, "url": url, "text": "text",
+						}},
+					},
+				})
+			}))
+			defer alchemist.Close()
+			withRepositoryEndpoints(t, alchemist.URL)
+
+			st := &retryStore{configs: []models.APIConfigModel{{
+				Name: "threads", URL: connector.URL, Method: http.MethodPost,
+				ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+				TextLanguage: "en",
+			}}}
+			if err := api.LoadAPIConfigs(st); err != nil {
+				t.Fatalf("LoadAPIConfigs() error = %v", err)
+			}
+
+			if _, err := RetryMessagePost(st, tt.apis, retryTestURL); err != nil {
+				t.Fatalf("RetryMessagePost() error = %v", err)
+			}
+
+			if tt.wantPosted && postedPatches != 1 {
+				t.Errorf("update-posted calls = %d, want 1", postedPatches)
+			}
+			if !tt.wantPosted && postedPatches != 0 {
+				t.Errorf("update-posted calls = %d, want none while a connector still failed", postedPatches)
+			}
+		})
+	}
+}
+
+// A retry keeps its image in a subdirectory of the image root, so the served
+// path has to carry that subdirectory or the connector fetches a 404.
+func TestImageURLPath(t *testing.T) {
+	tests := []struct {
+		name  string
+		image string
+		want  string
+	}{
+		{name: "cron image at the root", image: imageDir + "/image_123.png", want: "image_123.png"},
+		{name: "retry image in a subdirectory", image: retryImageDir + "/retry_123.png", want: "retry/retry_123.png"},
+		{name: "path outside the image root falls back to the file name", image: "/var/tmp/other.png", want: "other.png"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := imageURLPath(tt.image); got != tt.want {
+				t.Errorf("imageURLPath(%q) = %q, want %q", tt.image, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNormalizeAPINames(t *testing.T) {
 	got, err := normalizeAPINames([]string{" threads ", "threads", "bluesky", ""})
 	if err != nil {

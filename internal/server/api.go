@@ -487,7 +487,9 @@ func (api *CronAPI) RetryMessagePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req models.RetryMessageRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// The body is a short list of integration names and a url; anything larger is
+	// not a request this endpoint should read into memory.
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8*1024)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

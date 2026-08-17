@@ -123,7 +123,7 @@ func makeRepositoryRequest(payload getRepositoryRequest) (*repositoryResponse, e
 		"Authorization": {authorizationHeader()},
 	}
 
-	resp, err := client.Do(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}

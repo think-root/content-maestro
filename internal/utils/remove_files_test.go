@@ -106,6 +106,48 @@ func TestRemoveAllFilesInFolder_Success(t *testing.T) {
 	}
 }
 
+// The image folder has two writers: the publishing cron and a manual retry. The
+// cleanup must leave the retry's subdirectory alone and must not treat a file
+// that vanished under it as a failure - doing so used to turn a successful run
+// into a reported failure.
+func TestRemoveAllFilesInFolder_ToleratesConcurrentWriters(t *testing.T) {
+	testDir := t.TempDir()
+
+	subDir := filepath.Join(testDir, "retry")
+	if err := os.MkdirAll(subDir, 0o777); err != nil {
+		t.Fatalf("failed to create subdirectory: %v", err)
+	}
+	keep := filepath.Join(subDir, "retry_1.png")
+	if err := os.WriteFile(keep, []byte("image"), 0o644); err != nil {
+		t.Fatalf("failed to write file in subdirectory: %v", err)
+	}
+
+	vanishing := filepath.Join(testDir, "image_1.png")
+	if err := os.WriteFile(vanishing, []byte("image"), 0o644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	// Simulate the other writer deleting the file first.
+	remove = func(name string) error {
+		if err := os.Remove(name); err != nil {
+			return err
+		}
+		return os.Remove(name)
+	}
+	defer func() { remove = os.Remove }()
+
+	if err := RemoveAllFilesInFolder(testDir); err != nil {
+		t.Fatalf("RemoveAllFilesInFolder() error = %v, want nil", err)
+	}
+
+	if _, err := os.Stat(keep); err != nil {
+		t.Errorf("file in subdirectory was removed: %v", err)
+	}
+	if _, err := os.Stat(vanishing); !os.IsNotExist(err) {
+		t.Errorf("file at the root was not removed: %v", err)
+	}
+}
+
 func TestRemoveAllFilesInFolder_FailedRemove(t *testing.T) {
 	testDir := t.TempDir()
 	fp := filepath.Join(testDir, "locked")

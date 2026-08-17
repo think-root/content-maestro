@@ -35,7 +35,7 @@ func UpdateRepositoryPosted(url string, posted bool) (bool, error) {
 		"Authorization": {authorizationHeader()},
 	}
 
-	resp, err := client.Do(req)
+	resp, err := doRequest(req)
 	if err != nil {
 		return false, fmt.Errorf("error making request: %w", err)
 	}
