@@ -1,19 +1,16 @@
 package repository
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
-func init() {
-	getRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/get-repository/"
-	bearerToken = "Bearer " + os.Getenv("CONTENT_ALCHEMIST_BEARER")
-}
-
-type repo struct {
+// Item is a single repository as returned by content-alchemist.
+type Item struct {
 	ID         int     `json:"id"`
 	Posted     bool    `json:"posted"`
 	URL        string  `json:"url"`
@@ -27,7 +24,7 @@ type repositoryResponse struct {
 		All        int    `json:"all"`
 		Posted     int    `json:"posted"`
 		Unposted   int    `json:"unposted"`
-		Items      []repo `json:"items"`
+		Items      []Item `json:"items"`
 		Page       int    `json:"page"`
 		PageSize   int    `json:"page_size"`
 		TotalPages int    `json:"total_pages"`
@@ -37,36 +34,84 @@ type repositoryResponse struct {
 	Status  string `json:"status"`
 }
 
+type getRepositoryRequest struct {
+	Limit        int    `json:"limit,omitempty"`
+	Posted       *bool  `json:"posted,omitempty"`
+	SortOrder    string `json:"sort_order,omitempty"`
+	SortBy       string `json:"sort_by,omitempty"`
+	TextLanguage string `json:"text_language,omitempty"`
+	URL          string `json:"url,omitempty"`
+}
+
 func GetRepository(limit int, posted bool, sort_order, sort_by string, textLanguage ...string) (*repositoryResponse, error) {
 	var lang string
 	if len(textLanguage) > 0 && textLanguage[0] != "" {
 		lang = textLanguage[0]
 	}
 
-	response, err := makeRepositoryRequest(limit, posted, sort_order, sort_by, lang)
+	return makeRepositoryRequest(getRepositoryRequest{
+		Limit:        limit,
+		Posted:       &posted,
+		SortOrder:    sort_order,
+		SortBy:       sort_by,
+		TextLanguage: lang,
+	})
+}
+
+// GetRepositoryByURL fetches one repository by its url regardless of its posted
+// state. Used when a specific publication has to be re-sent to a connector, so
+// the item must not be looked up through the publication queue.
+func GetRepositoryByURL(url, textLanguage string) (*Item, error) {
+	if strings.TrimSpace(url) == "" {
+		return nil, fmt.Errorf("repository url is required")
+	}
+
+	response, err := makeRepositoryRequest(getRepositoryRequest{
+		URL:          url,
+		TextLanguage: textLanguage,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if response.Status == "error" && strings.Contains(response.Message, "no text available for language") && lang != "uk" {
-		return makeRepositoryRequest(limit, posted, sort_order, sort_by, "uk")
+	if len(response.Data.Items) == 0 {
+		return nil, fmt.Errorf("repository %s not found", url)
 	}
 
-	return response, nil
+	item := response.Data.Items[0]
+
+	// An older content-alchemist silently ignores the url filter and answers with
+	// the head of the queue instead. Posting that item would publish the wrong
+	// repository without any error, so refuse anything we did not ask for.
+	if item.URL != url {
+		return nil, fmt.Errorf("content-alchemist returned repository %s instead of %s", item.URL, url)
+	}
+
+	return &item, nil
 }
 
-func makeRepositoryRequest(limit int, posted bool, sort_order, sort_by, textLanguage string) (*repositoryResponse, error) {
-	payloadStr := fmt.Sprintf(`{
-			"limit": %d,
-			"posted": %t,
-			"sort_order": "%s",
-			"sort_by": "%s",
-			"text_language": "%s"
-		}`, limit, posted, sort_order, sort_by, textLanguage)
+// GetLatestPostedRepository returns the most recently published repository.
+func GetLatestPostedRepository(textLanguage string) (*Item, error) {
+	response, err := GetRepository(1, true, "DESC", "date_posted", textLanguage)
+	if err != nil {
+		return nil, err
+	}
 
-	payload := strings.NewReader(payloadStr)
+	if len(response.Data.Items) == 0 {
+		return nil, fmt.Errorf("no published repositories found")
+	}
 
-	req, err := http.NewRequest(http.MethodPost, getRepositoryUrl, payload)
+	item := response.Data.Items[0]
+	return &item, nil
+}
+
+func makeRepositoryRequest(payload getRepositoryRequest) (*repositoryResponse, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("error encoding request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, getRepositoryURL(), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -75,7 +120,7 @@ func makeRepositoryRequest(limit int, posted bool, sort_order, sort_by, textLang
 		"Accept":        {"*/*"},
 		"Connection":    {"keep-alive"},
 		"Content-Type":  {"application/json"},
-		"Authorization": {bearerToken},
+		"Authorization": {authorizationHeader()},
 	}
 
 	resp, err := client.Do(req)
@@ -84,10 +129,48 @@ func makeRepositoryRequest(limit int, posted bool, sort_order, sort_by, textLang
 	}
 	defer resp.Body.Close()
 
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	// A rejected request must surface as an error. Decoding it as a normal
+	// payload leaves Items empty, which callers used to report as "no items
+	// available" and hid the real cause.
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf("content-alchemist error (status %d): %s", resp.StatusCode, errorDetail(respBody))
+	}
+
 	var response repositoryResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := json.Unmarshal(respBody, &response); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
+	if response.Status == "error" {
+		return nil, fmt.Errorf("content-alchemist error: %s", errorDetail(respBody))
+	}
+
 	return &response, nil
+}
+
+// errorDetail pulls the message out of a content-alchemist error envelope and
+// falls back to the raw body, which is plain text for auth and rate-limit
+// rejections.
+func errorDetail(body []byte) string {
+	var envelope struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &envelope); err == nil && envelope.Message != "" {
+		return envelope.Message
+	}
+
+	detail := strings.TrimSpace(string(body))
+	if detail == "" {
+		return "empty response body"
+	}
+	if len(detail) > 300 {
+		return detail[:300] + "…"
+	}
+
+	return detail
 }

@@ -5,22 +5,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
 func TestUpdateRepositoryPosted(t *testing.T) {
-	originalClient := client
-	originalURL := updatePostedUrl
-	originalBearer := bearerToken
-
-	bearerToken = "Bearer test-token"
-
-	defer func() {
-		client = originalClient
-		updatePostedUrl = originalURL
-		bearerToken = originalBearer
-	}()
+	t.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
 
 	tests := []struct {
 		name           string
@@ -85,8 +74,8 @@ func TestUpdateRepositoryPosted(t *testing.T) {
 					t.Errorf("Expected Content-Type header to be application/json")
 				}
 
-				if r.Header.Get("Authorization") != bearerToken {
-					t.Errorf("Expected Authorization header to be %s, got %s", bearerToken, r.Header.Get("Authorization"))
+				if r.Header.Get("Authorization") != testBearerToken {
+					t.Errorf("Expected Authorization header to be %s, got %s", testBearerToken, r.Header.Get("Authorization"))
 				}
 
 				if tt.checkRequest {
@@ -103,8 +92,7 @@ func TestUpdateRepositoryPosted(t *testing.T) {
 			}))
 			defer server.Close()
 
-			updatePostedUrl = server.URL
-			client = server.Client()
+			t.Setenv("CONTENT_ALCHEMIST_URL", server.URL)
 
 			result, err := UpdateRepositoryPosted(tt.url, tt.posted)
 			if (err != nil) != tt.wantErr {
@@ -119,48 +107,30 @@ func TestUpdateRepositoryPosted(t *testing.T) {
 	}
 }
 
-func TestEnvironmentVariables(t *testing.T) {
-	originalURL := os.Getenv("CONTENT_ALCHEMIST_URL")
-	originalBearer := os.Getenv("CONTENT_ALCHEMIST_BEARER")
+func TestEndpointsFollowEnvironment(t *testing.T) {
+	t.Setenv("CONTENT_ALCHEMIST_URL", "https://test.example.com")
+	t.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
 
-	defer func() {
-		os.Setenv("CONTENT_ALCHEMIST_URL", originalURL)
-		os.Setenv("CONTENT_ALCHEMIST_BEARER", originalBearer)
-	}()
-
-	originalUpdateURL := updatePostedUrl
-	originalGetURL := getRepositoryUrl
-	originalToken := bearerToken
-
-	updatePostedUrl = ""
-	getRepositoryUrl = ""
-	bearerToken = ""
-
-	os.Setenv("CONTENT_ALCHEMIST_URL", "https://test.example.com")
-	os.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
-
-	var _ = &http.Client{}
-
-	updatePostedUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/update-posted/"
-	getRepositoryUrl = os.Getenv("CONTENT_ALCHEMIST_URL") + "/think-root/api/get-repository/"
-	bearerToken = "Bearer " + os.Getenv("CONTENT_ALCHEMIST_BEARER")
-
-	expectedUpdateURL := "https://test.example.com/think-root/api/update-posted/"
-	if updatePostedUrl != expectedUpdateURL {
-		t.Errorf("Expected updatePostedUrl to be %s, got %s", expectedUpdateURL, updatePostedUrl)
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{name: "update posted", got: updatePostedURL(), want: "https://test.example.com/think-root/api/update-posted/"},
+		{name: "get repository", got: getRepositoryURL(), want: "https://test.example.com/think-root/api/get-repository/"},
+		{name: "delete repository", got: deleteRepositoryURL(), want: "https://test.example.com/think-root/api/delete-repository/"},
+		{name: "authorization", got: authorizationHeader(), want: "Bearer test-token"},
 	}
 
-	expectedGetURL := "https://test.example.com/think-root/api/get-repository/"
-	if getRepositoryUrl != expectedGetURL {
-		t.Errorf("Expected getRepositoryUrl to be %s, got %s", expectedGetURL, getRepositoryUrl)
+	for _, tt := range tests {
+		if tt.got != tt.want {
+			t.Errorf("%s = %s, want %s", tt.name, tt.got, tt.want)
+		}
 	}
 
-	expectedToken := "Bearer test-token"
-	if bearerToken != expectedToken {
-		t.Errorf("Expected bearerToken to be %s, got %s", expectedToken, bearerToken)
+	// A trailing slash in the configured base must not double up in the path.
+	t.Setenv("CONTENT_ALCHEMIST_URL", "https://test.example.com/")
+	if got, want := getRepositoryURL(), "https://test.example.com/think-root/api/get-repository/"; got != want {
+		t.Errorf("get repository with trailing slash = %s, want %s", got, want)
 	}
-
-	updatePostedUrl = originalUpdateURL
-	getRepositoryUrl = originalGetURL
-	bearerToken = originalToken
 }
