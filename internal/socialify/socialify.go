@@ -35,10 +35,21 @@ func ResetRetryConfig() {
 }
 
 func Socialify(usernameRepo string, outputPath string) error {
+	return SocialifyWithConfig(usernameRepo, outputPath, currentConfig)
+}
+
+// SocialifyWithConfig runs the image generation with a caller-supplied retry
+// budget. Callers that answer a synchronous request use it to avoid the default
+// budget, which can block for minutes, without mutating the shared config.
+func SocialifyWithConfig(usernameRepo string, outputPath string, config RetryConfig) error {
 	log.Debug("Starting Socialify image parsing")
 
+	if config.MaxRetries < 1 {
+		config.MaxRetries = 1
+	}
+
 	var lastErr error
-	for attempt := 1; attempt <= currentConfig.MaxRetries; attempt++ {
+	for attempt := 1; attempt <= config.MaxRetries; attempt++ {
 		err := trySocialify(usernameRepo, outputPath)
 		if err == nil {
 			log.Debug("Socialify image parsing finished")
@@ -46,13 +57,13 @@ func Socialify(usernameRepo string, outputPath string) error {
 		}
 
 		lastErr = err
-		if attempt < currentConfig.MaxRetries {
-			log.Errorf("Attempt %d failed: %v. Retrying in %s...", attempt, err, currentConfig.RetryInterval)
-			time.Sleep(currentConfig.RetryInterval)
+		if attempt < config.MaxRetries {
+			log.Errorf("Attempt %d failed: %v. Retrying in %s...", attempt, err, config.RetryInterval)
+			time.Sleep(config.RetryInterval)
 		}
 	}
 
-	log.Debugf("All %d attempts failed. Last error: %v", currentConfig.MaxRetries, lastErr)
+	log.Debugf("All %d attempts failed. Last error: %v", config.MaxRetries, lastErr)
 	return lastErr
 }
 

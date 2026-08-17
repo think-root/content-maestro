@@ -2,14 +2,13 @@ package schedule
 
 import (
 	"content-maestro/internal/api"
+	"content-maestro/internal/models"
 	"content-maestro/internal/notification"
 	"content-maestro/internal/repository"
 	"content-maestro/internal/socialify"
 	"content-maestro/internal/store"
 	"content-maestro/internal/utils"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,19 +20,22 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 
 	var status int
 	var logMessage string
+	// Recorded alongside the human-readable output so a partial run can be
+	// re-sent to the connectors that missed the item.
+	details := &models.MessageRunDetails{}
 
 	defer func() {
 		if r := recover(); r != nil {
 			panicMessage := fmt.Sprintf("Panic occurred: %v. %s", r, logMessage)
 			log.Error("Message job panic: %v", r)
-			if err := store.LogCronExecution("message", 0, panicMessage); err != nil {
+			if err := store.LogCronExecutionDetails("message", 0, panicMessage, details); err != nil {
 				log.Error("Failed to log panic execution: %v", err)
 			}
 			notification.NotifyCronResult("message", 0, panicMessage)
 			panic(r)
 		}
 
-		if err := store.LogCronExecution("message", status, logMessage); err != nil {
+		if err := store.LogCronExecutionDetails("message", status, logMessage, details); err != nil {
 			log.Error("Failed to log cron execution: %v", err)
 		}
 		notification.NotifyCronResult("message", status, logMessage)
@@ -176,48 +178,7 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			updatedURL = item.URL
 		}
 
-		var req api.RequestConfig
-
-		commonFields := map[string]string{
-			"text": item.Text,
-			"url":  item.URL,
-		}
-
-		switch strings.ToLower(endpoint.ContentType) {
-		case "multipart":
-			req = api.RequestConfig{
-				APIName:    apiName,
-				FormFields: commonFields,
-			}
-
-			if endpoint.SocialifyImage && image_name != "" {
-				req.FileFields = map[string]string{
-					"image": image_name,
-				}
-			}
-		case "json":
-			req = api.RequestConfig{
-				APIName:  apiName,
-				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
-			}
-
-			if endpoint.SocialifyImage && image_name != "" {
-				publicURL := os.Getenv("PUBLIC_URL")
-				if publicURL != "" {
-					imageURL := fmt.Sprintf("%s/images/%s", publicURL, filepath.Base(image_name))
-					req.JSONBody["image_url"] = imageURL
-				} else {
-					log.Error("PUBLIC_URL not set, cannot generate image_url for API %s", apiName)
-				}
-			}
-		default:
-			req = api.RequestConfig{
-				APIName:  apiName,
-				JSONBody: map[string]any{"text": item.Text, "url": item.URL},
-			}
-		}
-
-		resp, err := api.ExecuteRequest(req)
+		resp, err := publishItem(apiName, endpoint, item, image_name)
 		if err != nil {
 			log.Errorf("%s API error: %v", apiName, err)
 			failedAPIs = append(failedAPIs, apiName)
@@ -231,6 +192,10 @@ func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 			errorMessages = append(errorMessages, fmt.Sprintf("%s API failed (status %d)", apiName, resp.StatusCode))
 		}
 	}
+
+	details.URL = updatedURL
+	details.Sent = successfulAPIs
+	details.Failed = failedAPIs
 
 	if len(successfulAPIs) > 0 && updatedURL != "" {
 		if _, err := repository.UpdateRepositoryPosted(updatedURL, true); err != nil {
