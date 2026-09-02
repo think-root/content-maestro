@@ -18,8 +18,10 @@ import (
 )
 
 // ErrInvalidRetryRequest marks a manual publication that was rejected because of
-// its input, so callers can answer with 400 instead of 500.
-var ErrInvalidRetryRequest = errors.New("invalid retry request")
+// its input, so callers can answer with 400 instead of 500. Its message says
+// "request" rather than "retry": the dashboard shows it verbatim, and both manual
+// endpoints return it.
+var ErrInvalidRetryRequest = errors.New("invalid request")
 
 // ErrPublishBusy reports that another publication holds publishMutex. Publishing
 // on demand answers an HTTP request, so it refuses rather than queueing behind a
