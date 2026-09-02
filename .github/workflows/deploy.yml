@@ -74,7 +74,11 @@ jobs:
             fi
 
             echo "Cloning new version of the repository..."
-            git clone "https://github.com/${{ github.repository }}.git" "$REPO_FOLDER"
+            # Anonymous HTTPS clones of this public repository fail on this host -
+            # git falls through to a credential prompt - so the clone is authenticated.
+            git clone "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git" "$REPO_FOLDER"
+            # The token must not stay behind in .git/config on the server.
+            git -C "$REPO_FOLDER" remote set-url origin "https://github.com/${{ github.repository }}.git"
 
             cd "$REPO_FOLDER"
 
