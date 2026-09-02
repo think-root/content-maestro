@@ -1,3 +1,16 @@
+# [3.9.0](https://github.com/think-root/content-maestro/compare/v3.8.0...v3.9.0) (2026-09-02)
+
+
+### Bug Fixes
+
+* **api:** answer 404 for a repository content-alchemist does not know ([ce649c8](https://github.com/think-root/content-maestro/commit/ce649c8a5735e5554b308174ddc7aa063703738f))
+* **api:** drop "retry" from the rejected-request message ([02d09ed](https://github.com/think-root/content-maestro/commit/02d09edb6313ec077681947412f8feb85b3a5701))
+
+
+### Features
+
+* **api:** publish a repository immediately ([20e2381](https://github.com/think-root/content-maestro/commit/20e2381fb90a09a6f61f3228ede26e7aeaa2a448))
+
 # [3.8.0](https://github.com/think-root/content-maestro/compare/v3.7.1...v3.8.0) (2026-08-17)
 
 
