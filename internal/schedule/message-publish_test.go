@@ -3,6 +3,7 @@ package schedule
 import (
 	"content-maestro/internal/api"
 	"content-maestro/internal/models"
+	"content-maestro/internal/repository"
 	"content-maestro/internal/store"
 	"encoding/json"
 	"errors"
@@ -685,6 +686,46 @@ func TestPublishNowRefusesAlreadyPostedRepository(t *testing.T) {
 	}
 	if st.logCalls != 0 {
 		t.Errorf("cron history writes = %d, want none", st.logCalls)
+	}
+}
+
+// A url content-alchemist does not know is a client mistake, so it has to be
+// distinguishable from content-alchemist being unreachable - the handler answers
+// 404 for the first and 500 for the second.
+func TestPublishNowReportsAnUnknownRepositoryAsNotFound(t *testing.T) {
+	var connectorRequests int
+	connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectorRequests++
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer connector.Close()
+
+	alchemist := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"status":"error","message":"Repository not found"}`))
+	}))
+	defer alchemist.Close()
+	withRepositoryEndpoints(t, alchemist.URL)
+
+	st := &retryStore{configs: []models.APIConfigModel{{
+		Name: "threads", URL: connector.URL, Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+		TextLanguage: "en",
+	}}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	_, err := PublishNow(st, "https://github.com/nobody/nothing")
+	if !errors.Is(err, repository.ErrRepositoryNotFound) {
+		t.Fatalf("PublishNow() error = %v, want repository.ErrRepositoryNotFound", err)
+	}
+	if connectorRequests != 0 {
+		t.Errorf("connector requests = %d, want none", connectorRequests)
+	}
+	if st.logCalls != 0 {
+		t.Errorf("cron history writes = %d, want none for a run that never started", st.logCalls)
 	}
 }
 

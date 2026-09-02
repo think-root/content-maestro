@@ -257,11 +257,12 @@ func publishManually(st store.StoreInterface, opts publishOptions) (*PublishResu
 	}
 
 	if opts.requireUnposted {
-		// One extra lookup before anything is published: an item that already left
-		// the queue must not be sent again, and this is also where a repository
-		// deleted since the dashboard rendered it surfaces as an error rather than
-		// as a per-connector failure. The language is deliberately empty - only the
-		// posted flag is read here.
+		// One lookup before anything is published, deliberately kept even though the
+		// connector loop fetches the item again a moment later: it is what makes an
+		// item that already left the queue, and a url content-alchemist does not
+		// know, a single clear error instead of a set of per-connector failures plus
+		// a cron-history row for a run that could never have worked. The language is
+		// empty because only the posted flag is read here.
 		current, err := repository.GetRepositoryByURL(url, "")
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve %s: %w", url, err)

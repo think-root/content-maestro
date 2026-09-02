@@ -487,7 +487,9 @@ A message run marks the repository as posted as soon as **any** integration succ
 
 The repository text is fetched per integration in that integration's configured `text_language`, and one image is generated for the whole retry when any integration has `socialify_image` enabled. No Pushover notification is sent: a manual retry is already being watched by whoever triggered it.
 
-Retries are serialised — a second one waits for the first, so a double-clicked button cannot publish twice. An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
+Retries are serialised against each other, against [`/api/message/publish`](#apimessagepublish) and against the `message` cron — a double-clicked button cannot publish twice, and a cron run cannot mark an item it never sent. Unlike publish-now, a retry **waits** for whatever holds that lock instead of refusing: it is a repair action, and refusing it would leave the connectors that failed unrepaired. The wait is unbounded and there is no request timeout, so a retry issued during a cron run can hold its connection for the length of that run (minutes, in the worst case described under [`/api/message/publish`](#apimessagepublish)); repeated clicks queue up behind it rather than failing fast.
+
+An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
 
 **Curl Example:**
 

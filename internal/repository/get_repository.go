@@ -3,6 +3,7 @@ package repository
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,6 +59,12 @@ func GetRepository(limit int, posted bool, sort_order, sort_by string, textLangu
 	})
 }
 
+// ErrRepositoryNotFound reports that content-alchemist has no repository for the
+// requested identifier. It is a sentinel so HTTP callers can answer 404 for what
+// is a client mistake - a typo'd or already deleted url - instead of 500, which
+// would be indistinguishable from content-alchemist itself being down.
+var ErrRepositoryNotFound = errors.New("repository not found")
+
 // GetRepositoryByURL fetches one repository by its url regardless of its posted
 // state. Used when a specific publication has to be re-sent to a connector, so
 // the item must not be looked up through the publication queue.
@@ -75,7 +82,7 @@ func GetRepositoryByURL(url, textLanguage string) (*Item, error) {
 	}
 
 	if len(response.Data.Items) == 0 {
-		return nil, fmt.Errorf("repository %s not found", url)
+		return nil, fmt.Errorf("%w: %s", ErrRepositoryNotFound, url)
 	}
 
 	item := response.Data.Items[0]
@@ -137,6 +144,12 @@ func makeRepositoryRequest(payload getRepositoryRequest) (*repositoryResponse, e
 	// A rejected request must surface as an error. Decoding it as a normal
 	// payload leaves Items empty, which callers used to report as "no items
 	// available" and hid the real cause.
+	if resp.StatusCode == http.StatusNotFound {
+		// content-alchemist answers 404 for an identifier it does not know, which is
+		// a client mistake rather than a failure of either service.
+		return nil, fmt.Errorf("%w: %s", ErrRepositoryNotFound, errorDetail(respBody))
+	}
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return nil, fmt.Errorf("content-alchemist error (status %d): %s", resp.StatusCode, errorDetail(respBody))
 	}

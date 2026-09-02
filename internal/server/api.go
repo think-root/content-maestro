@@ -3,6 +3,7 @@ package server
 import (
 	apiExecutor "content-maestro/internal/api"
 	"content-maestro/internal/models"
+	"content-maestro/internal/repository"
 	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
@@ -517,7 +518,9 @@ func (api *CronAPI) RetryMessagePost(w http.ResponseWriter, r *http.Request) {
 //
 // Like the retry endpoint this answers 200 once the run happened, however many
 // integrations failed - the per-integration outcomes are the useful signal. The
-// error statuses all describe why nothing was attempted at all.
+// error statuses all describe why nothing was attempted at all: a rejected
+// request (400), a url content-alchemist does not know (404), or a state that
+// makes publishing this item now impossible (409).
 func (api *CronAPI) PublishMessageNow(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodOptions:
@@ -541,6 +544,10 @@ func (api *CronAPI) PublishMessageNow(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, schedule.ErrInvalidRetryRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, repository.ErrRepositoryNotFound):
+			// A url content-alchemist does not know is a client mistake - a typo, or a
+			// row deleted since the dashboard rendered it - not a server failure.
+			http.Error(w, err.Error(), http.StatusNotFound)
 		case errors.Is(err, schedule.ErrPublishBusy),
 			errors.Is(err, schedule.ErrNoEnabledIntegrations),
 			errors.Is(err, schedule.ErrAlreadyPosted):

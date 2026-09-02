@@ -145,6 +145,55 @@ func TestPublishMessageNowConflictsWhenNoIntegrationEnabled(t *testing.T) {
 	}
 }
 
+// A url content-alchemist does not know is a client mistake; answering 500 would
+// make it indistinguishable from content-alchemist being down.
+func TestPublishMessageNowAnswersNotFoundForAnUnknownRepository(t *testing.T) {
+	alchemist := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"status":"error","message":"Repository not found"}`))
+	}))
+	defer alchemist.Close()
+	t.Setenv("CONTENT_ALCHEMIST_URL", alchemist.URL)
+	t.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
+
+	api, st := newPublishAPI(t, []models.APIConfigModel{{
+		Name: "threads", URL: "http://127.0.0.1:1", Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+		TextLanguage: "en",
+	}})
+
+	recorder := httptest.NewRecorder()
+	api.PublishMessageNow(recorder, publishRequest(http.MethodPost, `{"url":"https://github.com/nobody/nothing"}`))
+
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d (body %q)", recorder.Code, http.StatusNotFound, recorder.Body.String())
+	}
+	if st.logCalls != 0 {
+		t.Errorf("cron history writes = %d, want none", st.logCalls)
+	}
+}
+
+// content-alchemist being unreachable is a server failure, and must not be
+// reported as the client's mistake.
+func TestPublishMessageNowAnswersServerErrorWhenAlchemistIsDown(t *testing.T) {
+	t.Setenv("CONTENT_ALCHEMIST_URL", "http://127.0.0.1:1")
+	t.Setenv("CONTENT_ALCHEMIST_BEARER", "test-token")
+
+	api, _ := newPublishAPI(t, []models.APIConfigModel{{
+		Name: "threads", URL: "http://127.0.0.1:1", Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+		TextLanguage: "en",
+	}})
+
+	recorder := httptest.NewRecorder()
+	api.PublishMessageNow(recorder, publishRequest(http.MethodPost, `{"url":"`+publishTestURL+`"}`))
+
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want %d (body %q)", recorder.Code, http.StatusInternalServerError, recorder.Body.String())
+	}
+}
+
 // A partially failed run is still a run that happened: the per-integration
 // outcomes carry the failures, so the response stays 200.
 func TestPublishMessageNowAnswersOKWithOutcomes(t *testing.T) {
