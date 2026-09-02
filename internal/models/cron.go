@@ -28,3 +28,10 @@ type RetryMessageRequest struct {
 	APIs []string `json:"apis"`
 	URL  string   `json:"url"`
 }
+
+// PublishMessageRequest asks for one repository to be published immediately to
+// every enabled integration. URL is required: there is no sensible fallback for
+// "publish something now".
+type PublishMessageRequest struct {
+	URL string `json:"url"`
+}

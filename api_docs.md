@@ -487,7 +487,9 @@ A message run marks the repository as posted as soon as **any** integration succ
 
 The repository text is fetched per integration in that integration's configured `text_language`, and one image is generated for the whole retry when any integration has `socialify_image` enabled. No Pushover notification is sent: a manual retry is already being watched by whoever triggered it.
 
-Retries are serialised — a second one waits for the first, so a double-clicked button cannot publish twice. An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
+Retries are serialised against each other, against [`/api/message/publish`](#apimessagepublish) and against the `message` cron — a double-clicked button cannot publish twice, and a cron run cannot mark an item it never sent. Unlike publish-now, a retry **waits** for whatever holds that lock instead of refusing: it is a repair action, and refusing it would leave the connectors that failed unrepaired. The wait is unbounded and there is no request timeout, so a retry issued during a cron run can hold its connection for the length of that run (minutes, in the worst case described under [`/api/message/publish`](#apimessagepublish)); repeated clicks queue up behind it rather than failing fast.
+
+An item that is still unposted is marked as posted only when **every** requested integration succeeded; marking it after a partial retry would drop it out of the queue again, which is the failure this endpoint repairs.
 
 **Curl Example:**
 
@@ -516,6 +518,8 @@ curl -X POST \
 - `message`: The text recorded in cron history
 - `succeeded` / `failed`: Integration names per outcome
 - `outcomes`: Per-integration detail, with an `error` string for every failure
+- `posted`: Whether the item was marked as published and left the publication queue
+- `posted_error`: Present only when that marking failed — the item went out but stayed in the queue, so the scheduled run will publish it again
 
 **Response Example:**
 
@@ -537,6 +541,75 @@ Every retry is recorded in cron history under the `message` name with `details.m
 - 200: The retry ran. Individual integration failures are reported in `outcomes`, not in the status code
 - 400: Bad Request - Invalid body or an empty `apis` list
 - 401: Unauthorized - Invalid or missing Bearer token
+- 500: Internal Server Error - API configurations not loaded, or the repository could not be resolved
+
+### /api/message/publish
+
+**Endpoint:** `/api/message/publish`
+
+**Method:** `POST`
+
+**Description:** Publish one repository to every enabled integration immediately, instead of waiting for its turn in the publication queue.
+
+It exists because a post that is lost *after* publication — a bad record deleted from the queue once it was already sent — cannot be recovered by promoting anything: the item is gone from the queue. Promoting a repository (content-alchemist's `/promote-repository/`) only moves it to the head of the queue; this endpoint publishes it now.
+
+There is no `apis` parameter: the run targets every integration whose `api_configs` row has `enabled = true`, resolved server-side at request time. A dashboard's cached configuration must not decide what actually gets published.
+
+The repository text is fetched per integration in that integration's configured `text_language`, and one image is generated for the whole run when any integration has `socialify_image` enabled. No Pushover notification is sent — whoever triggered the run is watching it.
+
+Unlike the message cron this does **not** revalidate the repository URL and delete dead ones: the cron picks blindly from the queue, while this publishes the row a human chose.
+
+**Marking as posted:** the item is marked as published as soon as **any** integration accepts it, matching the message cron (and unlike [`/api/message/retry`](#apimessageretry), which requires every requested integration to succeed). The run is recorded in cron history as a manual one, so the integrations that failed are finished off from there with the retry endpoint.
+
+**Concurrency:** serialised against the message cron and the retry endpoint. Rather than queueing behind a cron run that can take minutes, it refuses with `409`. A repository that is already published is refused with `409` as well, before any integration is contacted — a stale dashboard row must not publish the same post twice.
+
+**Duration:** the request is **synchronous** and can take minutes — image generation retries for up to ~63 s, the Threads connector alone is configured with a 90 s timeout, and every integration adds its own repository lookup. Any reverse proxy in front of content-maestro needs a matching read timeout, or the browser gets a `504` while the publication keeps running.
+
+**Curl Example:**
+
+```bash
+curl -X POST \
+  'http://localhost:8080/api/message/publish' \
+  -H 'Authorization: Bearer <API_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "url": "https://github.com/resemble-ai/chatterbox"
+  }'
+```
+
+**Request Parameters:**
+
+| Parameter | Type   | Required | Description                                                                                      |
+| --------- | ------ | -------- | ------------------------------------------------------------------------------------------------ |
+| `url`   | string | Yes      | Repository to publish. There is no fallback: "publish something now" is never a safe guess. |
+
+**Response Structure:** identical to [`/api/message/retry`](#apimessageretry) — `url`, `status`, `message`, `succeeded`, `failed`, `outcomes`, `posted`, `posted_error`.
+
+**Response Example:**
+
+```json
+{
+  "url": "https://github.com/resemble-ai/chatterbox",
+  "status": 2,
+  "message": "Manual publish: https://github.com/resemble-ai/chatterbox sent to: telegram. Failed: threads. Errors: threads: API request failed with status 500",
+  "succeeded": ["telegram"],
+  "failed": ["threads"],
+  "outcomes": [
+    { "api_name": "telegram", "success": true },
+    { "api_name": "threads", "success": false, "error": "API request failed with status 500" }
+  ],
+  "posted": true
+}
+```
+
+Every run is recorded in cron history under the `message` name with `details.manual = true`, so [`/api/cron-history`](#apicron-history) shows it alongside scheduled runs — and its `details.failed` list is what the retry endpoint works from.
+
+**Status Codes:**
+
+- 200: The publication ran. Individual integration failures are reported in `outcomes`, not in the status code
+- 400: Bad Request - Invalid body or a missing `url`
+- 401: Unauthorized - Invalid or missing Bearer token
+- 409: Conflict - Another publication is already running, no integration is enabled, or the repository is already published
 - 500: Internal Server Error - API configurations not loaded, or the repository could not be resolved
 
 ### /api/api-configs

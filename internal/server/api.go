@@ -3,6 +3,7 @@ package server
 import (
 	apiExecutor "content-maestro/internal/api"
 	"content-maestro/internal/models"
+	"content-maestro/internal/repository"
 	"content-maestro/internal/schedule"
 	"content-maestro/internal/store"
 	"content-maestro/internal/validation"
@@ -501,6 +502,61 @@ func (api *CronAPI) RetryMessagePost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+// PublishMessageNow publishes a repository immediately instead of waiting for its
+// turn in the publication queue. It exists because a post lost after publication -
+// a bad record deleted from the queue - cannot be recovered by promoting anything.
+//
+// It targets every enabled integration and takes no API list: the dashboard's
+// cached configuration must not decide what actually gets published.
+//
+// Like the retry endpoint this answers 200 once the run happened, however many
+// integrations failed - the per-integration outcomes are the useful signal. The
+// error statuses all describe why nothing was attempted at all: a rejected
+// request (400), a url content-alchemist does not know (404), or a state that
+// makes publishing this item now impossible (409).
+func (api *CronAPI) PublishMessageNow(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodOptions:
+		return
+	case http.MethodPost:
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req models.PublishMessageRequest
+	// The body is a single url; anything larger is not a request this endpoint
+	// should read into memory.
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8*1024)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result, err := schedule.PublishNow(api.store, req.URL)
+	if err != nil {
+		switch {
+		case errors.Is(err, schedule.ErrInvalidRetryRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, repository.ErrRepositoryNotFound):
+			// A url content-alchemist does not know is a client mistake - a typo, or a
+			// row deleted since the dashboard rendered it - not a server failure.
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, schedule.ErrPublishBusy),
+			errors.Is(err, schedule.ErrNoEnabledIntegrations),
+			errors.Is(err, schedule.ErrAlreadyPosted):
+			// Nothing about the request is wrong; the server is in a state that makes
+			// publishing this item now impossible, and the message says which.
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
