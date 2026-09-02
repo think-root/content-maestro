@@ -18,6 +18,12 @@ import (
 func MessageJob(s *gocron.Scheduler, store store.StoreInterface) {
 	log.Debug("cron job started")
 
+	// Serialised against the manual publication endpoints: a manual publish that
+	// marks its item posted mid-run would leave this run marking an item it never
+	// sent. Registered before the recover defer below, so a panic still unlocks.
+	publishMutex.Lock()
+	defer publishMutex.Unlock()
+
 	var status int
 	var logMessage string
 

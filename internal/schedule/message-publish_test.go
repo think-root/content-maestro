@@ -6,6 +6,7 @@ import (
 	"content-maestro/internal/store"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -374,6 +375,349 @@ func TestNormalizeAPINames(t *testing.T) {
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("normalizeAPINames() = %v, want %v", got, want)
+		}
+	}
+}
+
+// publishAlchemistStub answers get-repository for a single known repository and
+// counts the update-posted calls, which is what pins the mark-posted policy.
+func publishAlchemistStub(t *testing.T, posted bool, languages *[]string, patches *int) *httptest.Server {
+	t.Helper()
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			if patches != nil {
+				*patches++
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"status":"ok","message":"updated"}`))
+			return
+		}
+
+		var body struct {
+			URL          string `json:"url"`
+			TextLanguage string `json:"text_language"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("failed to decode alchemist request: %v", err)
+		}
+		if languages != nil {
+			*languages = append(*languages, body.TextLanguage)
+		}
+
+		url := body.URL
+		if url == "" {
+			url = retryTestURL
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"status": "ok",
+			"data": map[string]any{
+				"items": []map[string]any{{
+					"id":     1327,
+					"posted": posted,
+					"url":    url,
+					"text":   "text for " + body.TextLanguage,
+				}},
+			},
+		})
+	}))
+}
+
+func TestPublishNowSendsToEveryEnabledIntegration(t *testing.T) {
+	var connectorBodies []map[string]any
+	connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		connectorBodies = append(connectorBodies, body)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer connector.Close()
+
+	var languages []string
+	patches := 0
+	alchemist := publishAlchemistStub(t, false, &languages, &patches)
+	defer alchemist.Close()
+	withRepositoryEndpoints(t, alchemist.URL)
+
+	st := &retryStore{configs: []models.APIConfigModel{
+		{
+			Name: "threads", URL: connector.URL, Method: http.MethodPost,
+			ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+			TextLanguage: "en",
+		},
+		{
+			Name: "telegram", URL: connector.URL, Method: http.MethodPost,
+			ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+			TextLanguage: "uk",
+		},
+		{
+			Name: "bluesky", URL: connector.URL, Method: http.MethodPost,
+			ContentType: "json", SuccessCode: http.StatusOK, Enabled: false,
+			TextLanguage: "en",
+		},
+	}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	result, err := PublishNow(st, retryTestURL)
+	if err != nil {
+		t.Fatalf("PublishNow() error = %v", err)
+	}
+
+	if len(connectorBodies) != 2 {
+		t.Fatalf("connector received %d requests, want 2 (one per enabled integration)", len(connectorBodies))
+	}
+
+	texts := map[string]bool{}
+	for _, body := range connectorBodies {
+		if got := body["url"]; got != retryTestURL {
+			t.Errorf("published url = %v, want %v", got, retryTestURL)
+		}
+		texts[fmt.Sprint(body["text"])] = true
+	}
+	if !texts["text for en"] || !texts["text for uk"] {
+		t.Errorf("published texts = %v, want both the English and the Ukrainian text", texts)
+	}
+
+	if result.Status != 1 {
+		t.Errorf("status = %d, want 1", result.Status)
+	}
+	for _, outcome := range result.Outcomes {
+		if outcome.APIName == "bluesky" {
+			t.Errorf("outcomes = %+v, want no entry for the disabled integration", result.Outcomes)
+		}
+	}
+	// Ordering is what lets the dashboard list the integrations the same way the
+	// run reports them, so it is asserted rather than merely relied upon.
+	if len(result.Succeeded) != 2 || result.Succeeded[0] != "telegram" || result.Succeeded[1] != "threads" {
+		t.Errorf("succeeded = %v, want [telegram threads]", result.Succeeded)
+	}
+	if !result.Posted || patches != 1 {
+		t.Errorf("posted = %v after %d update-posted calls, want it marked once", result.Posted, patches)
+	}
+
+	if st.logCalls != 1 {
+		t.Fatalf("cron history writes = %d, want 1", st.logCalls)
+	}
+	if st.loggedName != "message" {
+		t.Errorf("history name = %q, want %q", st.loggedName, "message")
+	}
+	if !strings.HasPrefix(st.loggedOutput, "Manual publish:") {
+		t.Errorf("history output = %q, want a Manual publish prefix", st.loggedOutput)
+	}
+	if st.loggedDetails == nil || !st.loggedDetails.Manual {
+		t.Fatalf("history details = %+v, want manual details", st.loggedDetails)
+	}
+	if st.loggedDetails.URL != retryTestURL {
+		t.Errorf("history details url = %q, want %q", st.loggedDetails.URL, retryTestURL)
+	}
+}
+
+// Publishing on demand follows the cron: one integration accepting the item is a
+// publication, so the item leaves the queue and the connectors that failed are
+// finished off from cron history. Without this the next scheduled run would
+// publish it again to the integrations that already have it.
+func TestPublishNowMarksPostedOnPartialSuccess(t *testing.T) {
+	connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer connector.Close()
+
+	patches := 0
+	alchemist := publishAlchemistStub(t, false, nil, &patches)
+	defer alchemist.Close()
+	withRepositoryEndpoints(t, alchemist.URL)
+
+	st := &retryStore{configs: []models.APIConfigModel{
+		{
+			Name: "threads", URL: connector.URL, Method: http.MethodPost,
+			ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+			TextLanguage: "en",
+		},
+		{
+			Name: "twitter", URL: "http://127.0.0.1:1", Method: http.MethodPost,
+			ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+			TextLanguage: "en",
+		},
+	}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	result, err := PublishNow(st, retryTestURL)
+	if err != nil {
+		t.Fatalf("PublishNow() error = %v", err)
+	}
+
+	if result.Status != 2 {
+		t.Errorf("status = %d, want 2 (partial)", result.Status)
+	}
+	if len(result.Succeeded) != 1 || result.Succeeded[0] != "threads" {
+		t.Errorf("succeeded = %v, want [threads]", result.Succeeded)
+	}
+	if len(result.Failed) != 1 || result.Failed[0] != "twitter" {
+		t.Errorf("failed = %v, want [twitter]", result.Failed)
+	}
+	if patches != 1 || !result.Posted {
+		t.Errorf("update-posted calls = %d, posted = %v; want it marked once", patches, result.Posted)
+	}
+	if result.PostedError != "" {
+		t.Errorf("posted error = %q, want none", result.PostedError)
+	}
+	// The failed integration has to reach cron history, or the retry button in the
+	// dashboard has nothing to finish off.
+	if st.loggedDetails == nil || len(st.loggedDetails.Failed) != 1 || st.loggedDetails.Failed[0] != "twitter" {
+		t.Errorf("history details = %+v, want twitter recorded as failed", st.loggedDetails)
+	}
+}
+
+func TestPublishNowDoesNotMarkPostedWhenNothingSent(t *testing.T) {
+	patches := 0
+	alchemist := publishAlchemistStub(t, false, nil, &patches)
+	defer alchemist.Close()
+	withRepositoryEndpoints(t, alchemist.URL)
+
+	st := &retryStore{configs: []models.APIConfigModel{{
+		Name: "threads", URL: "http://127.0.0.1:1", Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+		TextLanguage: "en",
+	}}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	result, err := PublishNow(st, retryTestURL)
+	if err != nil {
+		t.Fatalf("PublishNow() error = %v", err)
+	}
+
+	if result.Status != 0 {
+		t.Errorf("status = %d, want 0", result.Status)
+	}
+	if patches != 0 || result.Posted {
+		t.Errorf("update-posted calls = %d, posted = %v; want the item left in the queue", patches, result.Posted)
+	}
+	if st.logCalls != 1 {
+		t.Errorf("cron history writes = %d, want 1", st.logCalls)
+	}
+}
+
+func TestPublishNowRejectsMissingURL(t *testing.T) {
+	for _, url := range []string{"", "   "} {
+		st := &retryStore{}
+		if err := api.LoadAPIConfigs(st); err != nil {
+			t.Fatalf("LoadAPIConfigs() error = %v", err)
+		}
+
+		_, err := PublishNow(st, url)
+		if !errors.Is(err, ErrInvalidRetryRequest) {
+			t.Fatalf("PublishNow(%q) error = %v, want ErrInvalidRetryRequest", url, err)
+		}
+		if st.logCalls != 0 {
+			t.Errorf("cron history writes = %d, want none for a rejected request", st.logCalls)
+		}
+	}
+}
+
+func TestPublishNowRejectsWhenNoIntegrationEnabled(t *testing.T) {
+	var connectorRequests int
+	connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectorRequests++
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer connector.Close()
+
+	st := &retryStore{configs: []models.APIConfigModel{{
+		Name: "threads", URL: connector.URL, Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: false,
+		TextLanguage: "en",
+	}}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	_, err := PublishNow(st, retryTestURL)
+	if !errors.Is(err, ErrNoEnabledIntegrations) {
+		t.Fatalf("PublishNow() error = %v, want ErrNoEnabledIntegrations", err)
+	}
+	if connectorRequests != 0 {
+		t.Errorf("connector requests = %d, want none", connectorRequests)
+	}
+	if st.logCalls != 0 {
+		t.Errorf("cron history writes = %d, want none", st.logCalls)
+	}
+}
+
+// An item that already left the queue must not be published again: the row can be
+// stale in a second dashboard, or a cron run can have consumed it seconds earlier.
+func TestPublishNowRefusesAlreadyPostedRepository(t *testing.T) {
+	var connectorRequests int
+	connector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectorRequests++
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer connector.Close()
+
+	alchemist := publishAlchemistStub(t, true, nil, nil)
+	defer alchemist.Close()
+	withRepositoryEndpoints(t, alchemist.URL)
+
+	st := &retryStore{configs: []models.APIConfigModel{{
+		Name: "threads", URL: connector.URL, Method: http.MethodPost,
+		ContentType: "json", SuccessCode: http.StatusOK, Enabled: true,
+		TextLanguage: "en",
+	}}}
+	if err := api.LoadAPIConfigs(st); err != nil {
+		t.Fatalf("LoadAPIConfigs() error = %v", err)
+	}
+
+	_, err := PublishNow(st, retryTestURL)
+	if !errors.Is(err, ErrAlreadyPosted) {
+		t.Fatalf("PublishNow() error = %v, want ErrAlreadyPosted", err)
+	}
+	if connectorRequests != 0 {
+		t.Errorf("connector requests = %d, want none - nothing may be published twice", connectorRequests)
+	}
+	if st.logCalls != 0 {
+		t.Errorf("cron history writes = %d, want none", st.logCalls)
+	}
+}
+
+// Publishing on demand refuses instead of queueing: a cron run ahead of it can
+// hold the lock for minutes, and there is a spinner in front of the request.
+func TestPublishNowRefusesConcurrentRun(t *testing.T) {
+	publishMutex.Lock()
+	defer publishMutex.Unlock()
+
+	st := &retryStore{}
+	if _, err := PublishNow(st, retryTestURL); !errors.Is(err, ErrPublishBusy) {
+		t.Fatalf("PublishNow() error = %v, want ErrPublishBusy", err)
+	}
+	if st.logCalls != 0 {
+		t.Errorf("cron history writes = %d, want none", st.logCalls)
+	}
+}
+
+func TestEnabledAPINames(t *testing.T) {
+	configs := &api.APIConfig{APIs: map[string]api.APIEndpoint{
+		"threads":  {Enabled: true},
+		"bluesky":  {Enabled: true},
+		"telegram": {Enabled: false},
+	}}
+
+	got := enabledAPINames(configs)
+	want := []string{"bluesky", "threads"}
+	if len(got) != len(want) {
+		t.Fatalf("enabledAPINames() = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("enabledAPINames() = %v, want %v", got, want)
 		}
 	}
 }
