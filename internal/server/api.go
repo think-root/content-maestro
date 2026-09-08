@@ -183,6 +183,13 @@ func (api *CronAPI) UpdateCollectSettings(w http.ResponseWriter, r *http.Request
 		http.Error(w, "SpokenLanguageCode cannot be empty", http.StatusBadRequest)
 		return
 	}
+	if settings.Resource == "" {
+		settings.Resource = store.DefaultResource
+	}
+	if err := validation.ValidateCollectResource(settings.Resource); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if err := api.store.UpdateCollectSettings(&settings); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
