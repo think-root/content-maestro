@@ -231,6 +231,13 @@ func migrateCollectSettingsSchema(db *sql.DB) error {
 		}
 	}
 
+	// The OssInsight trending metric is unavailable upstream (since 2026-03-01),
+	// so keep the scheduled collect on GitHub instead of silently fetching nothing.
+	// Drop this together with re-enabling the option in content-sentinel.
+	if _, err := db.Exec("UPDATE collect_settings SET resource = 'github' WHERE resource = 'ossinsight'"); err != nil {
+		return fmt.Errorf("failed to reset paused resource: %v", err)
+	}
+
 	return nil
 }
 
