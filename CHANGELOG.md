@@ -1,3 +1,11 @@
+## [3.9.1](https://github.com/think-root/content-maestro/compare/v3.9.0...v3.9.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **api:** reject a paused collect source when settings are saved ([b113aac](https://github.com/think-root/content-maestro/commit/b113aac71a76d630ee843c80d6ba08c8308819a9))
+* **store:** keep the scheduled collect off the paused OssInsight source ([173bd4e](https://github.com/think-root/content-maestro/commit/173bd4ef1c88a80d81cdc796c054db7714c3a09d))
+
 # [3.9.0](https://github.com/think-root/content-maestro/compare/v3.8.0...v3.9.0) (2026-09-02)
 
 
